@@ -1,6 +1,8 @@
 // Arduino Beat Detector By Damian Peckett 2015
 // License: Public Domain.
 
+#include <rgb_hsv.h>
+
 // Our Global Sample Rate, 5000hz
 #define SAMPLEPERIODUS 200
 
@@ -14,6 +16,10 @@
 
 const int clipLed = 8;
 const int beatLed = 9;
+
+const int redPin = 3;
+const int greenPin = 5;
+const int bluePin = 6;
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -35,6 +41,39 @@ void setup() {
     //The pin with the LED
     pinMode(clipLed, OUTPUT);
     pinMode(beatLed, OUTPUT);
+}
+
+void setColor(int r, int g, int b) {
+    analogWrite(redPin, r);
+    analogWrite(greenPin, g);
+    analogWrite(bluePin, b);
+}
+
+void setHSVColor(float h, float s, float v) {
+    long rgb = HSV_to_RGB(h, s, v);
+    setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
+}
+
+void beatOn() {
+    unsigned long now = micros();
+    unsigned long then = lastFourBeats[lastFourBeatsIndex];
+    lastFourBeats[lastFourBeatsIndex++] = now;
+    lastFourBeatsIndex = lastFourBeatsIndex % lastBeatsCount;
+    unsigned long elapsed = now - then;
+    float took = (float) elapsed / 1000000.0;
+    float bpm = 60.0 * lastBeatsCount / took;
+    Serial.print(bpm);
+    Serial.print(" ");
+    Serial.print(elapsed);
+    Serial.print(" ");
+    Serial.println(lastFourBeatsIndex);
+
+    float h = random(256) / 255.0;
+    setHSVColor(h, 1.0, 1.0);
+}
+
+void beatOff() {
+
 }
 
 // 20 - 200hz Single Pole Bandpass IIR Filter
@@ -110,38 +149,28 @@ void loop() {
 
         // Every 200 samples (25hz) filter the envelope 
         if(i == 200) {
-                // Filter out repeating bass sounds 100 - 180bpm
-                beat = beatFilter(envelope);
+            // Filter out repeating bass sounds 100 - 180bpm
+            beat = beatFilter(envelope);
 
-                // Threshold it based on potentiometer on AN1
-                thresh = 0.02f * (float)analogRead(1);
+            // Threshold it based on potentiometer on AN1
+            thresh = 0.02f * (float)analogRead(1);
 
-                // If we are above threshold, light up LED
-                if (beat > thresh) {
-                    if (!beatActive) {
-                        digitalWrite(beatLed, HIGH);
-                        beatActive = true;
-                        unsigned long now = micros();
-                        unsigned long then = lastFourBeats[lastFourBeatsIndex];
-                        lastFourBeats[lastFourBeatsIndex++] = now;
-                        lastFourBeatsIndex = lastFourBeatsIndex % lastBeatsCount;
-                        unsigned long elapsed = now - then;
-                        float took = (float) elapsed / 1000000.0;
-                        float bpm = 60.0 * lastBeatsCount / took;
-                        Serial.print(bpm);
-                        Serial.print(" ");
-                        Serial.print(elapsed);
-                        Serial.print(" ");
-                        Serial.println(lastFourBeatsIndex);
-                    }
-                } else {
-                    if (beatActive) {
-                        digitalWrite(beatLed, LOW);
-                        beatActive = false;
-                    }
+            // If we are above threshold, light up LED
+            if (beat > thresh) {
+                if (!beatActive) {
+                    digitalWrite(beatLed, HIGH);
+                    beatActive = true;
+                    beatOn();
                 }
+            } else {
+                if (beatActive) {
+                    digitalWrite(beatLed, LOW);
+                    beatActive = false;
+                    beatOff();
+                }
+            }
 
-                i = 0;
+            i = 0;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
