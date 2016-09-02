@@ -17,13 +17,23 @@
 const int clipLed = 8;
 const int beatLed = 9;
 
+const float hueFadingPerSecond = 0.02;
+const float hueFadingPerSample = hueFadingPerSecond / 25;
+//const float valueFadingPerSecond = 0.5;
+//const float valueFadingPerSample = valueFadingPerSecond / 25;
+const float valueFactor = 0.9;
+const float minimumValue = 0.1;
+const float hueNextRadius = 0.2;
+
 LEDStrip leds(3, 5, 6);
+float currentH, currentV;
+int fadingH;
+bool fadingV;
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
 
 bool beatActive = false;
-
 const int lastBeatsCount = 8;
 unsigned long lastFourBeats[lastBeatsCount] = {micros()};
 int lastFourBeatsIndex = 0;
@@ -41,6 +51,20 @@ void setup() {
     pinMode(beatLed, OUTPUT);
 }
 
+float modHue(float hue) {
+    hue = fmod(hue, 1.0);
+    if (hue < 0)
+        return 1 + hue;
+    return hue;
+}
+
+float randomHueNear(float h, float radius) {
+    float minimumPossible = h - radius;
+    float maximumPossible = h + radius;
+    float alpha = float(random(1025)) / 1024.0;
+    return modHue((1-alpha) * minimumPossible + alpha * maximumPossible);
+}
+
 void beatOn() {
     unsigned long now = micros();
     unsigned long then = lastFourBeats[lastFourBeatsIndex];
@@ -49,18 +73,27 @@ void beatOn() {
     unsigned long elapsed = now - then;
     float took = (float) elapsed / 1000000.0;
     float bpm = 60.0 * lastBeatsCount / took;
+    /*
     Serial.print(bpm);
     Serial.print(" ");
     Serial.print(elapsed);
     Serial.print(" ");
     Serial.println(lastFourBeatsIndex);
+    */
 
     float h = random(256) / 255.0;
+    //float h = randomHueNear(currentH, hueNextRadius);
     leds.setHSV(h, 1.0, 1.0);
+    currentH = h;
+    currentV = 1.0;
+    fadingH = 0;
+    fadingV = false;
+    //Serial.println(h);
 }
 
 void beatOff() {
-
+    fadingH = random(0, 2) == 0 ? -1 : 1;
+    fadingV = true;
 }
 
 // 20 - 200hz Single Pole Bandpass IIR Filter
@@ -101,17 +134,23 @@ byte sampleToSerial(float sample) {
 }
 
 void loop() {
-    //Serial.println("Hello!");
+    /*
+    while (1) {
+        beatOn();
+        delay(4 * 0.5 * 60*1000 / 120);
+        beatOff();
+        delay(4 * 0.5 * 60*1000 / 120);
+    }
+    */
+
     unsigned long time = micros(); // Used to track rate
     unsigned int usample;
     float sample, value, envelope, beat, thresh;
     unsigned long i;
 
-    /*
-    unsigned long iterations = 10000;
+    unsigned long iterations = 25000;
     unsigned long start = micros();
-    */
-    for(i = 0;; ++i){
+    for(i = 0; i < iterations; ++i) {
         // Read ADC and center so +-512
         usample = analogRead(0);
         if (usample == 1023 || usample < 10) {
@@ -140,7 +179,8 @@ void loop() {
             beat = beatFilter(envelope);
 
             // Threshold it based on potentiometer on AN1
-            thresh = 0.02f * (float)analogRead(1);
+            // thresh = 0.02f * (float)analogRead(1);
+            thresh = 9.0;
 
             // If we are above threshold, light up LED
             if (beat > thresh) {
@@ -157,16 +197,25 @@ void loop() {
                 }
             }
 
+            if (fadingH != 0) {
+                currentH += fadingH * hueFadingPerSample;
+                if (currentH < 0 || currentH > 1.0)
+                    currentH = modHue(currentH);
+            }
+            if (fadingV)
+                currentV = max(minimumValue, currentV * valueFactor);
+            leds.setHSV(currentH, 1.0, currentV);
+
             i = 0;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
         for(unsigned long up = time+SAMPLEPERIODUS; time > 20 && time < up; time = micros());
     }
-    /*
+    
     unsigned long end = micros();
     float took = float(end - start) / 1000000.0;
     float samplerate = iterations / took;
-    //Serial.println(samplerate);
-    */
+    Serial.print("Samplerate: ");
+    Serial.println(samplerate);
 }
