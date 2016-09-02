@@ -1,7 +1,6 @@
-#include "rgb_hsv.h"
+#include "ledstrip.h"
 
 long HSV_to_RGB( float h, float s, float v ) {
-  h = h * 6.0;
   /*
      modified from Alvy Ray Smith's site:
    http://www.alvyray.com/Papers/hsv2rgb.htm
@@ -42,3 +41,21 @@ long HSV_to_RGB( float h, float s, float v ) {
     return long(v * 255 ) * 65536 + long( m * 255 ) * 256 + long( n * 255);
   }
 }
+
+LEDStrip::LEDStrip(int redPin, int greenPin, int bluePin)
+    : redPin(redPin),
+      greenPin(greenPin),
+      bluePin(bluePin) {
+}
+
+void LEDStrip::setRGB(int r, int g, int b) {
+    analogWrite(redPin, r);
+    analogWrite(greenPin, g);
+    analogWrite(bluePin, b);
+}
+
+void LEDStrip::setHSV(float h, float s, float v) {
+    long rgb = HSV_to_RGB(h * 6.0, s, v);
+    setRGB((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
+}
+

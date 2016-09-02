@@ -1,7 +1,7 @@
 // Arduino Beat Detector By Damian Peckett 2015
 // License: Public Domain.
 
-#include <rgb_hsv.h>
+#include <ledstrip.h>
 
 // Our Global Sample Rate, 5000hz
 #define SAMPLEPERIODUS 200
@@ -17,9 +17,7 @@
 const int clipLed = 8;
 const int beatLed = 9;
 
-const int redPin = 3;
-const int greenPin = 5;
-const int bluePin = 6;
+LEDStrip leds(3, 5, 6);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -43,17 +41,6 @@ void setup() {
     pinMode(beatLed, OUTPUT);
 }
 
-void setColor(int r, int g, int b) {
-    analogWrite(redPin, r);
-    analogWrite(greenPin, g);
-    analogWrite(bluePin, b);
-}
-
-void setHSVColor(float h, float s, float v) {
-    long rgb = HSV_to_RGB(h, s, v);
-    setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
-}
-
 void beatOn() {
     unsigned long now = micros();
     unsigned long then = lastFourBeats[lastFourBeatsIndex];
@@ -69,7 +56,7 @@ void beatOn() {
     Serial.println(lastFourBeatsIndex);
 
     float h = random(256) / 255.0;
-    setHSVColor(h, 1.0, 1.0);
+    leds.setHSV(h, 1.0, 1.0);
 }
 
 void beatOff() {
