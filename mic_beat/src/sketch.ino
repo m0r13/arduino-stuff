@@ -17,6 +17,15 @@
 const int clipLed = 8;
 const int beatLed = 9;
 
+/**
+ So settings:
+ - hue fading speed
+ - next hue maximum distance
+ - value fading speed
+ - value minimum
+ - overall value
+ - dummy beats: bpm
+*/
 const float hueFadingPerSecond = 0.02;
 const float hueFadingPerSample = hueFadingPerSecond / 25;
 const float valueFactor = 0.8;
@@ -71,8 +80,8 @@ void beatOn() {
     lastFourBeats[lastFourBeatsIndex++] = now;
     lastFourBeatsIndex = lastFourBeatsIndex % lastBeatsCount;
     unsigned long elapsed = now - then;
-    float took = (float) elapsed / 1000000.0;
-    float bpm = 60.0 * lastBeatsCount / took;
+    float secondsSpent = (float) elapsed / 1000000.0;
+    float bpm = 60.0 * lastBeatsCount / secondsSpent;
     Serial.print(bpm);
     Serial.print(" ");
     //Serial.print(elapsed);
@@ -147,6 +156,7 @@ void loop() {
     int j = 0;
     int breakAfterJIterations = iterations / 200;
     unsigned long start = micros();
+    unsigned long waited = 0;
     for(int i = 0;; ++i) {
         // Read ADC and center so +-512
         usample = analogRead(0);
@@ -209,12 +219,18 @@ void loop() {
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
+        unsigned long waitedStart = micros();
         for(unsigned long up = time+SAMPLEPERIODUS; time > 20 && time < up; time = micros());
+        waited += micros() - waitedStart;
     }
     
     unsigned long end = micros();
-    float took = float(end - start) / 1000000.0;
-    float samplerate = iterations / took;
+    float secondsSpent = float(end - start) / 1000000.0;
+    float samplerate = iterations / secondsSpent;
+    float secondsWaited = waited / 1000000.0;
     Serial.print("Samplerate: ");
-    Serial.println(samplerate);
+    Serial.print(samplerate);
+    Serial.print("; ");
+    Serial.print(100 * secondsWaited / secondsSpent);
+    Serial.println("% in idle");
 }
