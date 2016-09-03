@@ -16,10 +16,10 @@
 #endif
 
 const int clipLed = 8;
-const int beatLed = 9;
+const int beatLed = 12;
 
 /**
- So settings:
+ So... settings:
  - hue fading speed
  - next hue maximum distance
  - value fading speed
@@ -28,13 +28,13 @@ const int beatLed = 9;
  - dummy beats: bpm
 */
 
-// PotiValue<float> testValue(1, 0.85, 0.95);
+PotiValue<float> hueFadingPerSecond(0.00, 0.02, 1.0);
+PotiValue<float> valueFactor(0.75, 0.85, 1.0);
+PotiValue<float> minimumValue(0.1, 0.7, 1.0);
+PotiValue<float> hueNextRadius(0.0, 0.3, 0.5);
 
-const float hueFadingPerSecond = 0.02;
-const float hueFadingPerSample = hueFadingPerSecond / 25;
-const float valueFactor = 0.8;
-const float minimumValue = 0.5;
-const float hueNextRadius = 0.2; // not used at the moment
+PotiValue<float>* values[] = {&hueFadingPerSecond, &valueFactor, &minimumValue, &hueNextRadius};
+size_t valuesCount = sizeof(values) / sizeof(values[0]);
 
 LEDStrip leds(9, 10, 11);
 float currentH = randomHueNear(0.5, 0.5), currentV;
@@ -59,6 +59,10 @@ void setup() {
     //The pin with the LED
     pinMode(clipLed, OUTPUT);
     pinMode(beatLed, OUTPUT);
+
+    hueFadingPerSecond.setPin(1);
+    //minimumValue.setPin(2);
+    //hueNextRadius.setPin(3);
 
     beatOn();
     beatOff();
@@ -92,8 +96,8 @@ void beatOn() {
     //Serial.print(" ");
     Serial.println(lastFourBeatsIndex);
 
-    float h = random(256) / 255.0;
-    //float h = randomHueNear(currentH, hueNextRadius);
+    //float h = random(256) / 255.0;
+    float h = randomHueNear(currentH, hueNextRadius.value());
     leds.setHSV(h, 1.0, 1.0);
     currentH = h;
     currentV = 1.0;
@@ -208,11 +212,14 @@ void loop() {
                 }
             }
 
+            for (int k = 0; k < valuesCount; k++)
+                values[k]->updateValue();
+
             if (fadingH != 0) {
-                currentH += fadingH * hueFadingPerSample;
+                currentH += fadingH * hueFadingPerSecond.value() / 25.0;
                 if (currentH < 0 || currentH > 1.0)
                     currentH = modHue(currentH);
-                currentV = max(minimumValue, currentV * valueFactor);
+                currentV = max(minimumValue.value(), currentV * valueFactor.value());
                 leds.setHSV(currentH, 1.0, currentV);
             }
 
