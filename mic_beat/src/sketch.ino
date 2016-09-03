@@ -36,7 +36,7 @@ const float valueFactor = 0.8;
 const float minimumValue = 0.5;
 const float hueNextRadius = 0.2; // not used at the moment
 
-LEDStrip leds(3, 5, 6);
+LEDStrip leds(9, 10, 11);
 float currentH = randomHueNear(0.5, 0.5), currentV;
 int fadingH;
 
