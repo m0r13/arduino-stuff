@@ -1,44 +1,31 @@
+// Based on:
 // Arduino Beat Detector By Damian Peckett 2015
 // License: Public Domain.
 
 #include <ledstrip.h>
 #include <potivalue.h>
 
-// Our Global Sample Rate, 5000hz
-#define SAMPLEPERIODUS 200
+const int SAMPLE_RATE = 5000; // in Hz
+const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
+const int BEAT_SAMPLE_N = 200; // check for beats every 200 samples (25Hz)
 
-// defines for setting and clearing register bits
-#ifndef cbi
-#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
-#endif
-#ifndef sbi
-#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
-#endif
+const int PIN_CLIP_LED = 8;
+const int PIN_BEAT_LED = 12;
 
-const int clipLed = 8;
-const int beatLed = 12;
-
-/**
- So... settings:
- - hue fading speed
- - next hue maximum distance
- - value fading speed
- - value minimum
- - overall value
- - dummy beats: bpm
-*/
-
+// parameters of the led program
 PotiValue<float> hueFadingPerSecond(0.00, 0.02, 1.0);
-PotiValue<float> valueFactor(0.75, 0.85, 1.0);
-PotiValue<float> minimumValue(0.1, 0.7, 1.0);
 PotiValue<float> hueNextRadius(0.0, 0.3, 0.5);
+PotiValue<float> valueFactor(0.75, 0.85, 1.0);
+// TODO: default value
+PotiValue<float> minimumValue(0.1, 0.7, 1.0);
+// TODO dummy beat generation somehow?
 
-PotiValue<float>* values[] = {&hueFadingPerSecond, &valueFactor, &minimumValue, &hueNextRadius};
+PotiValue<float>* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &minimumValue};
 size_t valuesCount = sizeof(values) / sizeof(values[0]);
 
 LEDStrip leds(9, 10, 11);
-float currentH = randomHueNear(0.5, 0.5), currentV;
-int fadingH;
+float currentHue, currentValue;
+int fadingHue;
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -50,38 +37,40 @@ int lastFourBeatsIndex = 0;
 
 void setup() {
     Serial.begin(9600);
-    
-    // Set ADC to 77khz, max for 10bit
-    sbi(ADCSRA,ADPS2);
-    cbi(ADCSRA,ADPS1);
-    cbi(ADCSRA,ADPS0);
+    randomSeed(analogRead(0));
 
-    //The pin with the LED
-    pinMode(clipLed, OUTPUT);
-    pinMode(beatLed, OUTPUT);
+    // set ADC to 77khz, max for 10bit
+    ADCSRA = (ADCSRA & ~0b111) | 0b100;
+
+    pinMode(PIN_CLIP_LED, OUTPUT);
+    pinMode(PIN_BEAT_LED, OUTPUT);
 
     hueFadingPerSecond.setPin(1);
     //minimumValue.setPin(2);
     //hueNextRadius.setPin(3);
 
+    // emulate a first beat to set a led strip random color
     beatOn();
     beatOff();
 }
 
-float modHue(float hue) {
+// converts any floating point hue to a hue in [0; 1]
+float hueMod(float hue) {
     hue = fmod(hue, 1.0);
     if (hue < 0)
         return 1 + hue;
     return hue;
 }
 
-float randomHueNear(float h, float radius) {
-    float minimumPossible = h - radius;
-    float maximumPossible = h + radius;
+// returns a random hue in [hue-radius; hue+radius]
+float randomHueNear(float hue, float radius) {
+    float minimumPossible = hue - radius;
+    float maximumPossible = hue + radius;
     float alpha = float(random(1025)) / 1024.0;
-    return modHue((1-alpha) * minimumPossible + alpha * maximumPossible);
+    return hueMod((1-alpha) * minimumPossible + alpha * maximumPossible);
 }
 
+// called when a beat starts
 void beatOn() {
     unsigned long now = micros();
     unsigned long then = lastFourBeats[lastFourBeatsIndex];
@@ -97,16 +86,33 @@ void beatOn() {
     Serial.println(lastFourBeatsIndex);
 
     //float h = random(256) / 255.0;
-    float h = randomHueNear(currentH, hueNextRadius.value());
+    float h = randomHueNear(currentHue, hueNextRadius.value());
     leds.setHSV(h, 1.0, 1.0);
-    currentH = h;
-    currentV = 1.0;
-    fadingH = 0;
+    currentHue = h;
+    currentValue = 1.0;
+    fadingHue = 0;
     //Serial.println(h);
 }
 
+// called when a beat ends
 void beatOff() {
-    fadingH = random(0, 2) == 0 ? -1 : 1;
+    fadingHue = random(0, 2) == 0 ? -1 : 1;
+}
+
+// called 25 times in a second, right after the beat detection
+void beatFade() {
+    // update led parameters
+    for (int k = 0; k < valuesCount; k++)
+        values[k]->updateValue();
+
+    // do some fading if we are outside of a beat
+    if (fadingHue != 0) {
+        currentHue += fadingHue * hueFadingPerSecond.value() / 25.0;
+        if (currentHue < 0 || currentHue > 1.0)
+            currentHue = hueMod(currentHue);
+        currentValue = max(minimumValue.value(), currentValue * valueFactor.value());
+        leds.setHSV(currentHue, 1.0, currentValue);
+    }
 }
 
 // 20 - 200hz Single Pole Bandpass IIR Filter
@@ -141,11 +147,6 @@ float beatFilter(float sample) {
     return yv[2];
 }
 
-byte sampleToSerial(float sample) {
-    int s = max(0, sample + 503);
-    return s << 2;
-}
-
 void loop() {
     /*
     while (1) {
@@ -156,85 +157,78 @@ void loop() {
     }
     */
 
+    // actual beat detection algorithm by Damian Peckett
     unsigned long time = micros(); // Used to track rate
-    unsigned int usample;
-    float sample, value, envelope, beat, thresh;
+    float beatThreshold = 9.0;
 
-    int iterations = 150 * 200;
+    // number of beat iterations (25Hz) after which to check samplerate
+    int beatIterations = 150;
+    // how man normal sample iterations (5000Hz) that are
+    int iterations = beatIterations * BEAT_SAMPLE_N;
     int j = 0;
-    int breakAfterJIterations = iterations / 200;
     unsigned long start = micros();
     unsigned long waited = 0;
     for(int i = 0;; ++i) {
         // Read ADC and center so +-512
-        usample = analogRead(0);
+        int usample = analogRead(0);
         if (usample == 1023 || usample < 10) {
             clipCounter = clipCounterMax;
-            digitalWrite(clipLed, HIGH);
+            digitalWrite(PIN_CLIP_LED, HIGH);
         }
         if (clipCounter > 0) {
             clipCounter--;
             if (clipCounter == 0)
-                digitalWrite(clipLed, LOW);
+                digitalWrite(PIN_CLIP_LED, LOW);
         }
 
-        sample = (float) usample - 503.f;
+        float sample = (float) usample - 503.f;
 
         // Filter only bass component
-        value = bassFilter(sample);
-        //Serial.write(sampleToSerial(value));
+        float value = bassFilter(sample);
 
         // Take signal amplitude and filter
-        if(value < 0)value=-value;
-        envelope = envelopeFilter(value);
+        if(value < 0)
+            value =- value;
+        float envelope = envelopeFilter(value);
 
         // Every 200 samples (25hz) filter the envelope 
-        if(i == 200) {
+        if(i == BEAT_SAMPLE_N) {
             // Filter out repeating bass sounds 100 - 180bpm
-            beat = beatFilter(envelope);
+            float beat = beatFilter(envelope);
 
             // Threshold it based on potentiometer on AN1
-            // thresh = 0.02f * (float)analogRead(1);
-            thresh = 9.0;
+            // beatThreshold = 0.02f * (float)analogRead(1);
+            // beatThreshold = 9.0;
 
             // If we are above threshold, light up LED
-            if (beat > thresh) {
+            if (beat > beatThreshold) {
                 if (!beatActive) {
-                    digitalWrite(beatLed, HIGH);
+                    digitalWrite(PIN_BEAT_LED, HIGH);
                     beatActive = true;
                     beatOn();
                 }
             } else {
                 if (beatActive) {
-                    digitalWrite(beatLed, LOW);
+                    digitalWrite(PIN_BEAT_LED, LOW);
                     beatActive = false;
                     beatOff();
                 }
             }
 
-            for (int k = 0; k < valuesCount; k++)
-                values[k]->updateValue();
-
-            if (fadingH != 0) {
-                currentH += fadingH * hueFadingPerSecond.value() / 25.0;
-                if (currentH < 0 || currentH > 1.0)
-                    currentH = modHue(currentH);
-                currentV = max(minimumValue.value(), currentV * valueFactor.value());
-                leds.setHSV(currentH, 1.0, currentV);
-            }
+            beatFade();
 
             i = 0;
             j++;
-            if (j >= breakAfterJIterations)
+            if (j >= beatIterations)
                 break;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
         unsigned long waitedStart = micros();
-        for(unsigned long up = time+SAMPLEPERIODUS; time > 20 && time < up; time = micros());
+        for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
         waited += micros() - waitedStart;
     }
-    
+
     unsigned long end = micros();
     float secondsSpent = float(end - start) / 1000000.0;
     float samplerate = iterations / secondsSpent;
