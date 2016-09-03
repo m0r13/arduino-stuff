@@ -2,6 +2,7 @@
 // License: Public Domain.
 
 #include <ledstrip.h>
+#include <potivalue.h>
 
 // Our Global Sample Rate, 5000hz
 #define SAMPLEPERIODUS 200
@@ -26,6 +27,9 @@ const int beatLed = 9;
  - overall value
  - dummy beats: bpm
 */
+
+// PotiValue<float> testValue(1, 0.85, 0.95);
+
 const float hueFadingPerSecond = 0.02;
 const float hueFadingPerSample = hueFadingPerSecond / 25;
 const float valueFactor = 0.8;
