@@ -19,16 +19,13 @@ const int beatLed = 9;
 
 const float hueFadingPerSecond = 0.02;
 const float hueFadingPerSample = hueFadingPerSecond / 25;
-//const float valueFadingPerSecond = 0.5;
-//const float valueFadingPerSample = valueFadingPerSecond / 25;
-const float valueFactor = 0.9;
-const float minimumValue = 0.1;
-const float hueNextRadius = 0.2;
+const float valueFactor = 0.8;
+const float minimumValue = 0.5;
+const float hueNextRadius = 0.2; // not used at the moment
 
 LEDStrip leds(3, 5, 6);
-float currentH, currentV;
+float currentH = randomHueNear(0.5, 0.5), currentV;
 int fadingH;
-bool fadingV;
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -49,6 +46,9 @@ void setup() {
     //The pin with the LED
     pinMode(clipLed, OUTPUT);
     pinMode(beatLed, OUTPUT);
+
+    beatOn();
+    beatOff();
 }
 
 float modHue(float hue) {
@@ -73,13 +73,11 @@ void beatOn() {
     unsigned long elapsed = now - then;
     float took = (float) elapsed / 1000000.0;
     float bpm = 60.0 * lastBeatsCount / took;
-    /*
     Serial.print(bpm);
     Serial.print(" ");
-    Serial.print(elapsed);
-    Serial.print(" ");
+    //Serial.print(elapsed);
+    //Serial.print(" ");
     Serial.println(lastFourBeatsIndex);
-    */
 
     float h = random(256) / 255.0;
     //float h = randomHueNear(currentH, hueNextRadius);
@@ -87,13 +85,11 @@ void beatOn() {
     currentH = h;
     currentV = 1.0;
     fadingH = 0;
-    fadingV = false;
     //Serial.println(h);
 }
 
 void beatOff() {
     fadingH = random(0, 2) == 0 ? -1 : 1;
-    fadingV = true;
 }
 
 // 20 - 200hz Single Pole Bandpass IIR Filter
@@ -146,11 +142,12 @@ void loop() {
     unsigned long time = micros(); // Used to track rate
     unsigned int usample;
     float sample, value, envelope, beat, thresh;
-    unsigned long i;
 
-    unsigned long iterations = 25000;
+    int iterations = 150 * 200;
+    int j = 0;
+    int breakAfterJIterations = iterations / 200;
     unsigned long start = micros();
-    for(i = 0; i < iterations; ++i) {
+    for(int i = 0;; ++i) {
         // Read ADC and center so +-512
         usample = analogRead(0);
         if (usample == 1023 || usample < 10) {
@@ -201,12 +198,14 @@ void loop() {
                 currentH += fadingH * hueFadingPerSample;
                 if (currentH < 0 || currentH > 1.0)
                     currentH = modHue(currentH);
-            }
-            if (fadingV)
                 currentV = max(minimumValue, currentV * valueFactor);
-            leds.setHSV(currentH, 1.0, currentV);
+                leds.setHSV(currentH, 1.0, currentV);
+            }
 
             i = 0;
+            j++;
+            if (j >= breakAfterJIterations)
+                break;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
