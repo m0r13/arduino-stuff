@@ -13,14 +13,14 @@ const int PIN_CLIP_LED = 8;
 const int PIN_BEAT_LED = 12;
 
 // parameters of the led program
-PotiValue<float> hueFadingPerSecond(0.00, 0.02, 1.0);
-PotiValue<float> hueNextRadius(0.0, 0.3, 0.5);
-PotiValue<float> valueFactor(0.75, 0.85, 1.0);
-PotiValue<float> defaultValue(0.1, 1.0, 1.0);
-PotiValue<float> minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
+PotiValue hueFadingPerSecond(0.00, 0.02, 1.0);
+PotiValue hueNextRadius(0.0, 0.3, 0.5);
+PotiValue valueFactor(0.75, 0.85, 1.0);
+PotiValue defaultValue(0.1, 1.0, 1.0);
+PotiValue minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 // TODO dummy beat generation somehow?
 
-PotiValue<float>* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &defaultValue,  &minimumValue};
+PotiValue* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &defaultValue,  &minimumValue};
 size_t valuesCount = sizeof(values) / sizeof(values[0]);
 
 LEDStrip leds(9, 10, 11);
