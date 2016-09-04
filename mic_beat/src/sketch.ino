@@ -20,8 +20,7 @@ PotiValue defaultValue(0.1, 1.0, 1.0);
 PotiValue minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 // TODO dummy beat generation somehow?
 
-PotiValue* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &defaultValue,  &minimumValue};
-size_t valuesCount = sizeof(values) / sizeof(values[0]);
+PotiValueManager manager;
 
 LEDStrip leds(9, 10, 11);
 float currentHue, currentValue;
@@ -45,6 +44,15 @@ void setup() {
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
 
+    manager.addValue(hueFadingPerSecond);
+    manager.addValue(hueNextRadius);
+    manager.addValue(valueFactor);
+    manager.addValue(defaultValue);
+    manager.addValue(minimumValue);
+
+    //manager.setMode(PotiValueManager::MODE_SERIAL);
+
+    manager.setMode(PotiValueManager::MODE_MANUAL);
     //hueFadingPerSecond.setPin(1);
     //hueNextRadius.setPin(1);
     //valueFactor.setPin(1);
@@ -103,8 +111,7 @@ void beatOff() {
 // called 25 times in a second, right after the beat detection
 void beatFade() {
     // update led parameters
-    for (int k = 0; k < valuesCount; k++)
-        values[k]->updateValue();
+    manager.updateValues();
 
     // do some fading if we are outside of a beat
     if (fadingHue != 0) {
@@ -226,7 +233,7 @@ void loop() {
 
         // Consume excess clock cycles, to keep at 5000 hz
         unsigned long waitedStart = micros();
-        for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
+        //for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
         waited += micros() - waitedStart;
     }
 
