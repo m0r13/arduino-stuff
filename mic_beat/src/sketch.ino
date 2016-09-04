@@ -16,11 +16,11 @@ const int PIN_BEAT_LED = 12;
 PotiValue<float> hueFadingPerSecond(0.00, 0.02, 1.0);
 PotiValue<float> hueNextRadius(0.0, 0.3, 0.5);
 PotiValue<float> valueFactor(0.75, 0.85, 1.0);
-// TODO: default value
-PotiValue<float> minimumValue(0.1, 0.7, 1.0);
+PotiValue<float> defaultValue(0.1, 1.0, 1.0);
+PotiValue<float> minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 // TODO dummy beat generation somehow?
 
-PotiValue<float>* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &minimumValue};
+PotiValue<float>* values[] = {&hueFadingPerSecond, &hueNextRadius, &valueFactor, &defaultValue,  &minimumValue};
 size_t valuesCount = sizeof(values) / sizeof(values[0]);
 
 LEDStrip leds(9, 10, 11);
@@ -45,9 +45,11 @@ void setup() {
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
 
-    hueFadingPerSecond.setPin(1);
-    //minimumValue.setPin(2);
-    //hueNextRadius.setPin(3);
+    //hueFadingPerSecond.setPin(1);
+    //hueNextRadius.setPin(1);
+    //valueFactor.setPin(1);
+    //defaultValue.setPin(1);
+    minimumValue.setPin(1);
 
     // emulate a first beat to set a led strip random color
     beatOn();
@@ -86,10 +88,9 @@ void beatOn() {
     Serial.println(lastFourBeatsIndex);
 
     //float h = random(256) / 255.0;
-    float h = randomHueNear(currentHue, hueNextRadius.value());
-    leds.setHSV(h, 1.0, 1.0);
-    currentHue = h;
-    currentValue = 1.0;
+    currentHue = randomHueNear(currentHue, hueNextRadius.value());
+    currentValue = defaultValue.value();
+    leds.setHSV(currentHue, 1.0, currentValue);
     fadingHue = 0;
     //Serial.println(h);
 }
@@ -110,7 +111,7 @@ void beatFade() {
         currentHue += fadingHue * hueFadingPerSecond.value() / 25.0;
         if (currentHue < 0 || currentHue > 1.0)
             currentHue = hueMod(currentHue);
-        currentValue = max(minimumValue.value(), currentValue * valueFactor.value());
+        currentValue = max(minimumValue.value() * defaultValue.value(), currentValue * valueFactor.value());
         leds.setHSV(currentHue, 1.0, currentValue);
     }
 }
