@@ -3,7 +3,7 @@
 // License: Public Domain.
 
 #include <ledstrip.h>
-#include <potivalue.h>
+#include <parameter.h>
 
 const int SAMPLE_RATE = 5000; // in Hz
 const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
@@ -13,14 +13,14 @@ const int PIN_CLIP_LED = 8;
 const int PIN_BEAT_LED = 12;
 
 // parameters of the led program
-PotiValue hueFadingPerSecond(0.00, 0.02, 1.0);
-PotiValue hueNextRadius(0.0, 0.3, 0.5);
-PotiValue valueFactor(0.75, 0.85, 1.0);
-PotiValue defaultValue(0.1, 1.0, 1.0);
-PotiValue minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
+Parameter hueFadingPerSecond(0.00, 0.02, 1.0);
+Parameter hueNextRadius(0.0, 0.3, 0.5);
+Parameter valueFactor(0.75, 0.85, 1.0);
+Parameter defaultValue(0.1, 1.0, 1.0);
+Parameter minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 // TODO dummy beat generation somehow?
 
-PotiValueManager values;
+ParameterManager parameters;
 
 LEDStrip leds(9, 10, 11);
 float currentHue, currentValue;
@@ -44,18 +44,18 @@ void setup() {
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
 
-    values.addValue(hueFadingPerSecond);
-    values.addValue(hueNextRadius);
-    values.addValue(valueFactor);
-    values.addValue(defaultValue);
-    values.addValue(minimumValue);
+    parameters.add(hueFadingPerSecond);
+    parameters.add(hueNextRadius);
+    parameters.add(valueFactor);
+    parameters.add(defaultValue);
+    parameters.add(minimumValue);
 
 #if 0
-    values.setAllModes(PotiValue::MODE_SERIAL);
+    parameters.setAllModes(Parameter::MODE_SERIAL);
 #endif
-    
+
 #if 1
-    values.setAllModes(PotiValue::MODE_DEFAULT);
+    parameters.setAllModes(Parameter::MODE_DEFAULT);
     //hueFadingPerSecond.setAnalogReadMode(1);
     //hueNextRadius.setAnalogReadMode(1);
     //valueFactor.setAnalogReadMode(1);
@@ -115,7 +115,7 @@ void beatOff() {
 // called 25 times in a second, right after the beat detection
 void beatFade() {
     // update led parameters
-    values.update();
+    parameters.update();
 
     // do some fading if we are outside of a beat
     if (fadingHue != 0) {

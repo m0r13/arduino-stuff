@@ -1,11 +1,11 @@
-#ifndef potivalue_h
-#define potivalue_h
+#ifndef parameter_h
+#define parameter_h
 
 #include <Arduino.h>
 
-class PotiValue {
+class Parameter {
 public:
-    PotiValue(float minValue, float defaultValue, float maxValue);
+    Parameter(float minValue, float defaultValue, float maxValue);
 
     int getMode() const;
     void setMode(int mode);
@@ -27,18 +27,18 @@ protected:
     float minValue, defaultValue, maxValue, currentValue;
 };
 
-class PotiValueManager {
+class ParameterManager {
 public:
-    PotiValueManager();
+    ParameterManager();
 
     void setAllModes(int mode);
-    void addValue(PotiValue& value);
+    void add(Parameter& value);
 
     void update();
 
 protected:
-    PotiValue* values[10];
-    size_t valueCount;
+    Parameter* parameters[10];
+    size_t parameterCount;
 };
 
 #endif
