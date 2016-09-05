@@ -20,7 +20,7 @@ PotiValue defaultValue(0.1, 1.0, 1.0);
 PotiValue minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 // TODO dummy beat generation somehow?
 
-PotiValueManager manager;
+PotiValueManager values;
 
 LEDStrip leds(9, 10, 11);
 float currentHue, currentValue;
@@ -44,20 +44,24 @@ void setup() {
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
 
-    manager.addValue(hueFadingPerSecond);
-    manager.addValue(hueNextRadius);
-    manager.addValue(valueFactor);
-    manager.addValue(defaultValue);
-    manager.addValue(minimumValue);
+    values.addValue(hueFadingPerSecond);
+    values.addValue(hueNextRadius);
+    values.addValue(valueFactor);
+    values.addValue(defaultValue);
+    values.addValue(minimumValue);
 
-    //manager.setMode(PotiValueManager::MODE_SERIAL);
-
-    manager.setMode(PotiValueManager::MODE_MANUAL);
-    //hueFadingPerSecond.setPin(1);
-    //hueNextRadius.setPin(1);
-    //valueFactor.setPin(1);
-    //defaultValue.setPin(1);
-    minimumValue.setPin(1);
+#if 0
+    values.setAllModes(PotiValue::MODE_SERIAL);
+#endif
+    
+#if 1
+    values.setAllModes(PotiValue::MODE_DEFAULT);
+    //hueFadingPerSecond.setAnalogReadMode(1);
+    //hueNextRadius.setAnalogReadMode(1);
+    //valueFactor.setAnalogReadMode(1);
+    //defaultValue.setAnalogReadMode(1);
+    minimumValue.setAnalogReadMode(1);
+#endif
 
     // emulate a first beat to set a led strip random color
     beatOn();
@@ -96,8 +100,8 @@ void beatOn() {
     Serial.println(lastFourBeatsIndex);
 
     //float h = random(256) / 255.0;
-    currentHue = randomHueNear(currentHue, hueNextRadius.value());
-    currentValue = defaultValue.value();
+    currentHue = randomHueNear(currentHue, hueNextRadius.getValue());
+    currentValue = defaultValue.getValue();
     leds.setHSV(currentHue, 1.0, currentValue);
     fadingHue = 0;
     //Serial.println(h);
@@ -111,14 +115,14 @@ void beatOff() {
 // called 25 times in a second, right after the beat detection
 void beatFade() {
     // update led parameters
-    manager.updateValues();
+    values.update();
 
     // do some fading if we are outside of a beat
     if (fadingHue != 0) {
-        currentHue += fadingHue * hueFadingPerSecond.value() / 25.0;
+        currentHue += fadingHue * hueFadingPerSecond.getValue() / 25.0;
         if (currentHue < 0 || currentHue > 1.0)
             currentHue = hueMod(currentHue);
-        currentValue = max(minimumValue.value() * defaultValue.value(), currentValue * valueFactor.value());
+        currentValue = max(minimumValue.getValue() * defaultValue.getValue(), currentValue * valueFactor.getValue());
         leds.setHSV(currentHue, 1.0, currentValue);
     }
 }

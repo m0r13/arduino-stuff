@@ -1,73 +1,65 @@
 #include "potivalue.h"
 
 PotiValue::PotiValue(float minValue, float defaultValue, float maxValue)
-    : fixed(true),
+    : mode(MODE_DEFAULT),
       minValue(minValue),
       defaultValue(defaultValue),
-      maxValue(maxValue) {
+      maxValue(maxValue),
+      currentValue(defaultValue) {
 }
 
-float PotiValue::value() const {
-    return fixed ? defaultValue : currentValue;
+int PotiValue::getMode() const {
+    return mode;
 }
 
-void PotiValue::updateValue() {
-    if (fixed)
-        return;
-    float analogValue = float(analogRead(pin)) / 1024.0;
-    currentValue = (1-analogValue) * minValue + analogValue * maxValue;
+void PotiValue::setMode(int mode) {
+    this->mode = mode;
 }
 
-void PotiValue::setPin(int pin) {
-    this->fixed = false;
-    this->pin = pin;
-    updateValue();
+int PotiValue::getAnalogReadPin() const {
+    return analogReadPin;
 }
 
-void PotiValue::setFixed(bool fixed) {
-    this->fixed = fixed;   
+void PotiValue::setAnalogReadMode(int pin) {
+    setMode(MODE_ANALOG_READ);
+    analogReadPin = pin;
 }
 
-void PotiValue::setDefault(float defaultValue) {
-    this->defaultValue = defaultValue;
+float PotiValue::getValue() const {
+    return mode == MODE_DEFAULT ? defaultValue : currentValue;
+}
+
+void PotiValue::setRelativeValue(float alpha) {
+    currentValue = (1-alpha) * minValue + alpha * maxValue;
 }
 
 PotiValueManager::PotiValueManager()
-    : mode(MODE_MANUALLY),
-      value_count(0) {
+    : valueCount(0) {
 }
 
-PotiValueManager::~PotiValueManager() {
-}
-
-void PotiValueManager::setMode(int mode) {
-    this->mode = mode;
-
-    for (int i = 0; i < value_count; i++) {
-        values[i]->setFixed(mode == MODE_SERIAL);
+void PotiValueManager::setAllModes(int mode) {
+    for (int i = 0; i < valueCount; i++) {
+        values[i]->setMode(mode);
     }
 }
 
 void PotiValueManager::addValue(PotiValue& value) {
-    values[value_count++] = &value;
+    values[valueCount++] = &value;
 }
 
-void PotiValueManager::updateValues() {
-    if (mode == MODE_MANUALLY) {
-        for (int i = 0; i < value_count; i++) {
-            values[i]->updateValue();
+void PotiValueManager::update() {
+    for (int i = 0; i < valueCount; i++) {
+        PotiValue* value = values[i];
+        if (value->getMode() == PotiValue::MODE_ANALOG_READ) {
+            value->setRelativeValue(float(analogRead(value->getAnalogReadPin()) / 1024.0));
         }
-    } else if (mode == MODE_SERIAL) {
-        while (Serial.available() >= 2) {
-            int id = Serial.read();
-            int value = Serial.read();
-            Serial.print("read ");
-            Serial.print(id);
-            Serial.print(" ");
-            Serial.println(value);
-            if (id >= value_count)
-                continue;
-            values[id]->setDefault((float) value / 255.0);
+    }
+
+    if (Serial.available() >= 2) {
+        int valueIndex = Serial.read();
+        float alpha = float(Serial.read()) / 255.0;
+        if (valueIndex < valueCount && values[valueIndex]->getMode() == PotiValue::MODE_SERIAL) {
+            values[valueIndex]->setRelativeValue(alpha);
         }
     }
 }

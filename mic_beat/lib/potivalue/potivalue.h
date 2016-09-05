@@ -7,36 +7,38 @@ class PotiValue {
 public:
     PotiValue(float minValue, float defaultValue, float maxValue);
 
-    float value() const;
-    void updateValue();
+    int getMode() const;
+    void setMode(int mode);
 
-    void setPin(int pin);
-    void setFixed(bool fixed);
-    void setDefault(float defaultValue);
+    int getAnalogReadPin() const;
+    void setAnalogReadMode(int pin);
+    void readFromAnalogPin();
+
+    float getValue() const;
+    void setRelativeValue(float alpha);
+
+    static const int MODE_DEFAULT = 0;
+    static const int MODE_ANALOG_READ = 1;
+    static const int MODE_SERIAL = 2;
 
 protected:
-    bool fixed;
-    int pin;
+    int mode;
+    int analogReadPin;
     float minValue, defaultValue, maxValue, currentValue;
 };
 
 class PotiValueManager {
 public:
     PotiValueManager();
-    ~PotiValueManager();
 
-    void setMode(int mode);
+    void setAllModes(int mode);
     void addValue(PotiValue& value);
-    void updateValues();
 
-    static const int MODE_MANUALLY = 0;
-    static const int MODE_SERIAL = 1;
+    void update();
 
 protected:
-    int mode;
-
     PotiValue* values[10];
-    size_t value_count;
+    size_t valueCount;
 };
 
 #endif
