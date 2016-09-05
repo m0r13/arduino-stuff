@@ -12,7 +12,6 @@ public:
 
     int getAnalogReadPin() const;
     void setAnalogReadMode(int pin);
-    void readFromAnalogPin();
 
     float getValue() const;
     void setRelativeValue(float alpha);
