@@ -4,6 +4,7 @@
 
 #include <ledstrip.h>
 #include <parameter.h>
+#include <bpmdetection.h>
 
 const int SAMPLE_RATE = 5000; // in Hz
 const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
@@ -21,6 +22,10 @@ Parameter minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as per
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
+
+// BeatDetection beatDetection
+BPMDetection bpmDetection;
+// LEDProgram leds
 
 LEDStrip leds(9, 10, 11);
 float currentHue, currentValue;
@@ -50,17 +55,17 @@ void setup() {
     parameters.add(defaultValue);
     parameters.add(minimumValue);
 
-#if 0
+#if 1
     parameters.setAllModes(Parameter::MODE_SERIAL);
 #endif
 
-#if 1
+#if 0
     parameters.setAllModes(Parameter::MODE_DEFAULT);
     //hueFadingPerSecond.setAnalogReadMode(1);
     //hueNextRadius.setAnalogReadMode(1);
     //valueFactor.setAnalogReadMode(1);
     //defaultValue.setAnalogReadMode(1);
-    minimumValue.setAnalogReadMode(1);
+    //minimumValue.setAnalogReadMode(1);
 #endif
 
     // emulate a first beat to set a led strip random color
@@ -86,18 +91,7 @@ float randomHueNear(float hue, float radius) {
 
 // called when a beat starts
 void beatOn() {
-    unsigned long now = micros();
-    unsigned long then = lastFourBeats[lastFourBeatsIndex];
-    lastFourBeats[lastFourBeatsIndex++] = now;
-    lastFourBeatsIndex = lastFourBeatsIndex % lastBeatsCount;
-    unsigned long elapsed = now - then;
-    float secondsSpent = (float) elapsed / 1000000.0;
-    float bpm = 60.0 * lastBeatsCount / secondsSpent;
-    Serial.print(bpm);
-    Serial.print(" ");
-    //Serial.print(elapsed);
-    //Serial.print(" ");
-    Serial.println(lastFourBeatsIndex);
+    bpmDetection.beatOn();
 
     //float h = random(256) / 255.0;
     currentHue = randomHueNear(currentHue, hueNextRadius.getValue());
@@ -109,6 +103,8 @@ void beatOn() {
 
 // called when a beat ends
 void beatOff() {
+    bpmDetection.beatOff();
+
     fadingHue = random(0, 2) == 0 ? -1 : 1;
 }
 
@@ -210,7 +206,7 @@ void loop() {
 
             // Threshold it based on potentiometer on AN1
             // beatThreshold = 0.02f * (float)analogRead(1);
-            // beatThreshold = 9.0;
+            beatThreshold = 9.0;
 
             // If we are above threshold, light up LED
             if (beat > beatThreshold) {
@@ -237,7 +233,7 @@ void loop() {
 
         // Consume excess clock cycles, to keep at 5000 hz
         unsigned long waitedStart = micros();
-        //for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
+        for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
         waited += micros() - waitedStart;
     }
 
