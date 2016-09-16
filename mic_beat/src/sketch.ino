@@ -195,7 +195,7 @@ void loop() {
             //beatThreshold = 0.02 * beatThreshold.getValue();
 
             // If we are above threshold, light up LED
-            if (beat > beatThreshold.getValue()) {
+            if (beat > beatThreshold) {
                 if (!beatActive) {
                     digitalWrite(PIN_BEAT_LED, HIGH);
                     beatActive = true;

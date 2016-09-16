@@ -1,5 +1,19 @@
 #include "ledstrip.h"
 
+float normalizeHue(float hue) {
+    hue = fmod(hue, 1.0);
+    if (hue < 0)
+        return 1 + hue;
+    return hue;
+}
+
+float randomHueNear(float hue, float radius) {
+    float minimumPossible = hue - radius;
+    float maximumPossible = hue + radius;
+    float alpha = float(random(1025)) / 1024.0;
+    return normalizeHue((1-alpha) * minimumPossible + alpha * maximumPossible);
+}
+
 long HSV_to_RGB( float h, float s, float v ) {
   /*
      modified from Alvy Ray Smith's site:
