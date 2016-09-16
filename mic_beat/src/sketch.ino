@@ -3,6 +3,7 @@
 // License: Public Domain.
 
 #include <ledstrip.h>
+#include <ledprogram.h>
 #include <parameter.h>
 #include <bpmdetection.h>
 
@@ -17,22 +18,32 @@ const int PIN_BEAT_LED = 12;
 Parameter hueFadingPerSecond(0.00, 0.02, 1.0);
 Parameter hueNextRadius(0.0, 0.3, 0.5);
 Parameter valueFactor(0.75, 0.85, 1.0);
-Parameter defaultValue(0.1, 1.0, 1.0);
-Parameter minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
+Parameter defaultValue(0.1, 0.2, 1.0);
+Parameter minimumValue(0.1, 0.7, 1.0); // minimum value is actually meant as percentage of default value
+Parameter saturation(0.0, 1.0, 1.0);
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
 
+LEDParameters programParameters = {
+    &hueFadingPerSecond,
+    &hueNextRadius,
+    &valueFactor,
+    &defaultValue,
+    &minimumValue,
+    &saturation
+};
+
 // BeatDetection beatDetection
 BPMDetection bpmDetection;
-// LEDProgram leds
-
-LEDStrip leds(9, 10, 11);
-float currentHue, currentValue;
-int fadingHue;
+LEDProgram ledProgram1(9, 10, 11, programParameters);
+LEDProgram ledProgram2(3, 5, 6, programParameters);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
+// 262/899 seem to be min/max für TL082CP 5V
+int clipMin = 265;
+int clipMax = 895;
 
 bool beatActive = false;
 const int lastBeatsCount = 8;
@@ -54,6 +65,7 @@ void setup() {
     parameters.add(valueFactor);
     parameters.add(defaultValue);
     parameters.add(minimumValue);
+    parameters.add(saturation);
 
 #if 1
     parameters.setAllModes(Parameter::MODE_SERIAL);
@@ -62,10 +74,11 @@ void setup() {
 #if 0
     parameters.setAllModes(Parameter::MODE_DEFAULT);
     //hueFadingPerSecond.setAnalogReadMode(1);
-    //hueNextRadius.setAnalogReadMode(1);
+    hueNextRadius.setAnalogReadMode(1);
     //valueFactor.setAnalogReadMode(1);
     //defaultValue.setAnalogReadMode(1);
     //minimumValue.setAnalogReadMode(1);
+    //saturation.setAnalogReadMode(1);
 #endif
 
     // emulate a first beat to set a led strip random color
@@ -73,54 +86,26 @@ void setup() {
     beatOff();
 }
 
-// converts any floating point hue to a hue in [0; 1]
-float hueMod(float hue) {
-    hue = fmod(hue, 1.0);
-    if (hue < 0)
-        return 1 + hue;
-    return hue;
-}
-
-// returns a random hue in [hue-radius; hue+radius]
-float randomHueNear(float hue, float radius) {
-    float minimumPossible = hue - radius;
-    float maximumPossible = hue + radius;
-    float alpha = float(random(1025)) / 1024.0;
-    return hueMod((1-alpha) * minimumPossible + alpha * maximumPossible);
-}
-
 // called when a beat starts
 void beatOn() {
     bpmDetection.beatOn();
-
-    //float h = random(256) / 255.0;
-    currentHue = randomHueNear(currentHue, hueNextRadius.getValue());
-    currentValue = defaultValue.getValue();
-    leds.setHSV(currentHue, 1.0, currentValue);
-    fadingHue = 0;
-    //Serial.println(h);
+    ledProgram1.beatOn();
+    ledProgram2.beatOn();
 }
 
 // called when a beat ends
 void beatOff() {
     bpmDetection.beatOff();
-
-    fadingHue = random(0, 2) == 0 ? -1 : 1;
+    ledProgram1.beatOff();
+    ledProgram2.beatOff();
 }
 
 // called 25 times in a second, right after the beat detection
 void beatFade() {
-    // update led parameters
+    // update lighting parameters
     parameters.update();
-
-    // do some fading if we are outside of a beat
-    if (fadingHue != 0) {
-        currentHue += fadingHue * hueFadingPerSecond.getValue() / 25.0;
-        if (currentHue < 0 || currentHue > 1.0)
-            currentHue = hueMod(currentHue);
-        currentValue = max(minimumValue.getValue() * defaultValue.getValue(), currentValue * valueFactor.getValue());
-        leds.setHSV(currentHue, 1.0, currentValue);
-    }
+    ledProgram1.beatFade();
+    ledProgram2.beatFade();
 }
 
 // 20 - 200hz Single Pole Bandpass IIR Filter
@@ -179,7 +164,7 @@ void loop() {
     for(int i = 0;; ++i) {
         // Read ADC and center so +-512
         int usample = analogRead(0);
-        if (usample == 1023 || usample < 10) {
+        if (usample <= clipMin || usample >= clipMax) {
             clipCounter = clipCounterMax;
             digitalWrite(PIN_CLIP_LED, HIGH);
         }
@@ -206,10 +191,11 @@ void loop() {
 
             // Threshold it based on potentiometer on AN1
             // beatThreshold = 0.02f * (float)analogRead(1);
-            beatThreshold = 9.0;
+            //beatThreshold = 9.0;
+            //beatThreshold = 0.02 * beatThreshold.getValue();
 
             // If we are above threshold, light up LED
-            if (beat > beatThreshold) {
+            if (beat > beatThreshold.getValue()) {
                 if (!beatActive) {
                     digitalWrite(PIN_BEAT_LED, HIGH);
                     beatActive = true;
