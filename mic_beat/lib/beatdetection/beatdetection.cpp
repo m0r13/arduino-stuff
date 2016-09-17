@@ -66,3 +66,18 @@ int BeatDetection::processSample(float sample) {
     return BEAT_KEEP;
 }
 
+
+BeatGenerator::BeatGenerator(float bpm)
+    : bpm(bpm), maxTimer(1000000 * 60 / (2*bpm) / 200), timer(0), i(0), currentStatus(false) {
+}
+
+int BeatGenerator::processSample(float sample) {
+    i++;
+
+    timer--;
+    if (timer <= 0) {
+        timer = maxTimer;
+        currentStatus = !currentStatus;
+        return currentStatus <= 0 ? BeatDetection::BEAT_ON : BeatDetection::BEAT_OFF;
+    }
+}

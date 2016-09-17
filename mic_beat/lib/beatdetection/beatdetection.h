@@ -21,4 +21,16 @@ protected:
     int i;
 };
 
+class BeatGenerator {
+public:
+    BeatGenerator(float bpm);
+
+    int processSample(float sample);
+
+protected:
+    float bpm;
+    int maxTimer, timer, i;
+    bool currentStatus;
+};
+
 #endif

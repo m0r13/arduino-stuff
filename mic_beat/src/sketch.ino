@@ -36,6 +36,7 @@ LEDParameters programParameters = {
 };
 
 BeatDetection beatDetection;
+//BeatGenerator beatDetection(125.0);
 BPMDetection bpmDetection;
 LEDProgram ledProgram1(9, 10, 11, programParameters);
 LEDProgram ledProgram2(3, 5, 6, programParameters);
@@ -150,8 +151,12 @@ void loop() {
                     beatOff();
                 }
             }
+        }
 
+        j++;
+        if (j == 200) {
             beatFade();
+            j = 0;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
