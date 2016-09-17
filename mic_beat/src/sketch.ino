@@ -5,6 +5,7 @@
 #include <ledstrip.h>
 #include <ledprogram.h>
 #include <parameter.h>
+#include <beatdetection.h>
 #include <bpmdetection.h>
 
 const int SAMPLE_RATE = 5000; // in Hz
@@ -18,8 +19,8 @@ const int PIN_BEAT_LED = 12;
 Parameter hueFadingPerSecond(0.00, 0.02, 1.0);
 Parameter hueNextRadius(0.0, 0.3, 0.5);
 Parameter valueFactor(0.75, 0.85, 1.0);
-Parameter defaultValue(0.1, 0.2, 1.0);
-Parameter minimumValue(0.1, 0.7, 1.0); // minimum value is actually meant as percentage of default value
+Parameter defaultValue(0.1, 0.5, 1.0);
+Parameter minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
 Parameter saturation(0.0, 1.0, 1.0);
 // TODO dummy beat generation somehow?
 
@@ -34,7 +35,7 @@ LEDParameters programParameters = {
     &saturation
 };
 
-// BeatDetection beatDetection
+BeatDetection beatDetection;
 BPMDetection bpmDetection;
 LEDProgram ledProgram1(9, 10, 11, programParameters);
 LEDProgram ledProgram2(3, 5, 6, programParameters);
@@ -71,12 +72,12 @@ void setup() {
     parameters.setAllModes(Parameter::MODE_SERIAL);
 #endif
 
-#if 0
+#if 1
     parameters.setAllModes(Parameter::MODE_DEFAULT);
     //hueFadingPerSecond.setAnalogReadMode(1);
-    hueNextRadius.setAnalogReadMode(1);
+    //hueNextRadius.setAnalogReadMode(1);
     //valueFactor.setAnalogReadMode(1);
-    //defaultValue.setAnalogReadMode(1);
+    defaultValue.setAnalogReadMode(1);
     //minimumValue.setAnalogReadMode(1);
     //saturation.setAnalogReadMode(1);
 #endif
@@ -108,48 +109,7 @@ void beatFade() {
     ledProgram2.beatFade();
 }
 
-// 20 - 200hz Single Pole Bandpass IIR Filter
-float bassFilter(float sample) {
-    static float xv[3] = {0,0,0}, yv[3] = {0,0,0};
-    xv[0] = xv[1]; xv[1] = xv[2]; 
-    xv[2] = sample / 9.1f;
-    yv[0] = yv[1]; yv[1] = yv[2]; 
-    yv[2] = (xv[2] - xv[0])
-        + (-0.7960060012f * yv[0]) + (1.7903124146f * yv[1]);
-    return yv[2];
-}
-
-// 10hz Single Pole Lowpass IIR Filter
-float envelopeFilter(float sample) { //10hz low pass
-    static float xv[2] = {0,0}, yv[2] = {0,0};
-    xv[0] = xv[1]; 
-    xv[1] = sample / 160.f;
-    yv[0] = yv[1]; 
-    yv[1] = (xv[0] + xv[1]) + (0.9875119299f * yv[0]);
-    return yv[1];
-}
-
-// 1.7 - 3.0hz Single Pole Bandpass IIR Filter
-float beatFilter(float sample) {
-    static float xv[3] = {0,0,0}, yv[3] = {0,0,0};
-    xv[0] = xv[1]; xv[1] = xv[2]; 
-    xv[2] = sample / 7.015f;
-    yv[0] = yv[1]; yv[1] = yv[2]; 
-    yv[2] = (xv[2] - xv[0])
-        + (-0.7169861741f * yv[0]) + (1.4453653501f * yv[1]);
-    return yv[2];
-}
-
 void loop() {
-    /*
-    while (1) {
-        beatOn();
-        delay(4 * 0.5 * 60*1000 / 120);
-        beatOff();
-        delay(4 * 0.5 * 60*1000 / 120);
-    }
-    */
-
     // actual beat detection algorithm by Damian Peckett
     unsigned long time = micros(); // Used to track rate
     float beatThreshold = 9.0;
@@ -175,27 +135,9 @@ void loop() {
         }
 
         float sample = (float) usample - 503.f;
-
-        // Filter only bass component
-        float value = bassFilter(sample);
-
-        // Take signal amplitude and filter
-        if(value < 0)
-            value =- value;
-        float envelope = envelopeFilter(value);
-
-        // Every 200 samples (25hz) filter the envelope 
-        if(i == BEAT_SAMPLE_N) {
-            // Filter out repeating bass sounds 100 - 180bpm
-            float beat = beatFilter(envelope);
-
-            // Threshold it based on potentiometer on AN1
-            // beatThreshold = 0.02f * (float)analogRead(1);
-            //beatThreshold = 9.0;
-            //beatThreshold = 0.02 * beatThreshold.getValue();
-
-            // If we are above threshold, light up LED
-            if (beat > beatThreshold) {
+        int beatStatus = beatDetection.processSample(sample);
+        if (beatStatus != BeatDetection::BEAT_KEEP) {
+            if (beatStatus == BeatDetection::BEAT_ON) {
                 if (!beatActive) {
                     digitalWrite(PIN_BEAT_LED, HIGH);
                     beatActive = true;
@@ -210,11 +152,6 @@ void loop() {
             }
 
             beatFade();
-
-            i = 0;
-            j++;
-            if (j >= beatIterations)
-                break;
         }
 
         // Consume excess clock cycles, to keep at 5000 hz
