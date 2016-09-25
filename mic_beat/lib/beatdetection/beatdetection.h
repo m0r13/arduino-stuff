@@ -29,7 +29,7 @@ public:
 
 protected:
     float bpm;
-    int maxTimer, timer, i;
+    int maxTimerOn, maxTimerOff, timer, i;
     bool currentStatus;
 };
 
