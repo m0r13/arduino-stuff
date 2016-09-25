@@ -16,12 +16,12 @@ const int PIN_CLIP_LED = 8;
 const int PIN_BEAT_LED = 12;
 
 // parameters of the led program
-Parameter hueFadingPerSecond(0.00, 0.02, 1.0);
-Parameter hueNextRadius(0.0, 0.3, 0.5);
-Parameter valueFactor(0.75, 0.85, 1.0);
-Parameter defaultValue(0.1, 0.5, 1.0);
-Parameter minimumValue(0.1, 0.5, 1.0); // minimum value is actually meant as percentage of default value
-Parameter saturation(0.0, 1.0, 1.0);
+Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // hueFadingPerSecond
+Parameter hueNextRadius(0.0, 0.2, 0.5); // hueNextRadius
+Parameter valueFactor(0.75, 0.85, 1.0); // valueFactor
+Parameter defaultValue(0.1, 1.0, 1.0); // defaultValue
+Parameter minimumValue(0.1, 0.8, 1.0); // minimum value is actually meant as percentage of default value
+Parameter saturation(0.0, 0.75, 1.0); // saturation
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
@@ -73,12 +73,12 @@ void setup() {
     parameters.setAllModes(Parameter::MODE_SERIAL);
 #endif
 
-#if 1
+#if 0
     parameters.setAllModes(Parameter::MODE_DEFAULT);
     //hueFadingPerSecond.setAnalogReadMode(1);
     //hueNextRadius.setAnalogReadMode(1);
     //valueFactor.setAnalogReadMode(1);
-    defaultValue.setAnalogReadMode(1);
+    //defaultValue.setAnalogReadMode(1);
     //minimumValue.setAnalogReadMode(1);
     //saturation.setAnalogReadMode(1);
 #endif
@@ -137,6 +137,8 @@ void loop() {
 
         float sample = (float) usample - 503.f;
         int beatStatus = beatDetection.processSample(sample);
+        //if (analogRead(1) < 512)
+        //    beatStatus = BeatDetection::BEAT_KEEP;
         if (beatStatus != BeatDetection::BEAT_KEEP) {
             if (beatStatus == BeatDetection::BEAT_ON) {
                 if (!beatActive) {
@@ -163,6 +165,9 @@ void loop() {
         unsigned long waitedStart = micros();
         for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
         waited += micros() - waitedStart;
+
+        if (i > iterations)
+            break;
     }
 
     unsigned long end = micros();
