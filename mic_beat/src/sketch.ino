@@ -22,6 +22,9 @@ Parameter valueFactor(0.75, 0.85, 1.0); // valueFactor
 Parameter defaultValue(0.1, 1.0, 1.0); // defaultValue
 Parameter minimumValue(0.1, 0.8, 1.0); // minimum value is actually meant as percentage of default value
 Parameter saturation(0.0, 0.75, 1.0); // saturation
+
+Parameter stroboThreshold(0.0, 0.0, 1.0); // stroboThreshold
+Parameter stroboBPM(60.0, 60.0, 6000.0); // stroboBPM
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
@@ -40,6 +43,7 @@ BeatDetection beatDetection;
 BPMDetection bpmDetection;
 LEDProgram ledProgram1(9, 10, 11, programParameters);
 LEDProgram ledProgram2(3, 5, 6, programParameters);
+LEDStrip strobo(9, 10, 11);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -68,6 +72,8 @@ void setup() {
     parameters.add(defaultValue);
     parameters.add(minimumValue);
     parameters.add(saturation);
+    parameters.add(stroboThreshold);
+    parameters.add(stroboBPM);
 
 #if 1
     parameters.setAllModes(Parameter::MODE_SERIAL);
@@ -102,12 +108,28 @@ void beatOff() {
     ledProgram2.beatOff();
 }
 
+
+int stroboMaxTimerOn, stroboMaxTimerOff, stroboTimer = 0;
+bool stroboCurrentStatus = false;
+
 // called 25 times in a second, right after the beat detection
 void beatFade() {
     // update lighting parameters
     parameters.update();
-    ledProgram1.beatFade();
-    ledProgram2.beatFade();
+    if (stroboThreshold.getValue() < 0.5) {
+        ledProgram1.beatFade();
+        ledProgram2.beatFade();
+    } else {
+        stroboTimer--;
+        if (stroboTimer <= 0) {
+            stroboMaxTimerOn = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
+            stroboMaxTimerOff = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
+            stroboTimer = !stroboCurrentStatus ? stroboMaxTimerOff : stroboMaxTimerOn;
+            stroboCurrentStatus = !stroboCurrentStatus;
+            int value = stroboCurrentStatus ? 255 : 0;
+            strobo.setRGB(value, value, value);
+        }
+    }
 }
 
 void loop() {
