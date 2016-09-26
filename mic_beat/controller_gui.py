@@ -4,7 +4,7 @@ import os
 import sys
 import serial
 import time
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore, QtTest
 
 SERIAL_UPDATE_EVERY = 1 / 25.0
 
@@ -20,7 +20,12 @@ def read_parameters():
             name = line[len("Parameter "):].split("(")[0]
             args = list(map(float, line[line.find("(")+1:line.find(")")].split(",")))
             description = line.split("// ")[1]
-            yield index, name, args, description
+            extra_args = {}
+            if "?" in description:
+                description, extra_args = description.split("?")
+                description = description.strip()
+                extra_args = dict(map(lambda l: l.split("="), extra_args.split(",")))
+            yield index, name, args, description, extra_args
             i += 1
 
 class SerialCommunicator(QtCore.QObject):
@@ -28,8 +33,8 @@ class SerialCommunicator(QtCore.QObject):
         super(QtCore.QObject, self).__init__(*args, **kwargs)
 
         self.stopped = False
-        self.serial = serial.Serial("/dev/ttyACM0", baudrate=9600)
-        #self.serial = serial.Serial()
+        #self.serial = serial.Serial("/dev/ttyACM0", baudrate=9600)
+        self.serial = serial.Serial()
         self.changed_values = {}
 
     @QtCore.pyqtSlot()
@@ -51,7 +56,6 @@ class SerialCommunicator(QtCore.QObject):
             now = time.time()
             # inform arduino about changes
             if len(self.changed_values) != 0 and now - last_serial_update > SERIAL_UPDATE_EVERY:
-                #print(self.changed_values)
                 for value_index, value in self.changed_values.items():
                     self.serial.write(bytearray([value_index, value]))
                 self.serial.flushOutput()
@@ -65,7 +69,7 @@ class ParameterSlider(QtWidgets.QWidget):
         super(QtWidgets.QWidget, self).__init__(*args, **kwargs)
 
         self.parameter = parameter
-        index, name, args, description = parameter
+        index, name, args, description, extra_args = parameter
 
         self.label_name = QtWidgets.QLabel()
         self.label_min = QtWidgets.QLabel(str(args[0]))
@@ -78,10 +82,11 @@ class ParameterSlider(QtWidgets.QWidget):
         self.reset()
         self.update_labels()
 
-        button = QtWidgets.QPushButton("Flash!")
-        button.pressed.connect(self.set_max)
-        button.released.connect(self.set_min)
-        has_button = name in ("stroboOverride", "stroboEnabled")
+        self.button = QtWidgets.QPushButton("Flash!")
+        self.button.pressed.connect(self.set_max)
+        self.button.released.connect(self.set_min)
+        self.has_button = extra_args.get("type", "") == "button"
+        self.shortcut = extra_args.get("shortcut")
 
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.label_min)
@@ -90,15 +95,15 @@ class ParameterSlider(QtWidgets.QWidget):
         vlayout = QtWidgets.QVBoxLayout()
         vlayout.addWidget(self.label_name)
         vlayout.addLayout(hlayout)
-        if has_button:
-            vlayout.addWidget(button)
+        if self.has_button:
+            vlayout.addWidget(self.button)
             self.label_min.hide()
             self.label_max.hide()
             self.slider.hide()
         self.setLayout(vlayout)
 
     def reset(self):
-        index, name, args, description = self.parameter
+        index, name, args, description, extra_args = self.parameter
         self.slider.setValue((args[1] - args[0]) / (args[2] - args[0]) * self.slider.maximum())
 
     def set_min(self):
@@ -108,7 +113,7 @@ class ParameterSlider(QtWidgets.QWidget):
         self.slider.setValue(self.slider.maximum())
 
     def update_labels(self):
-        index, name, args, description = self.parameter
+        index, name, args, description, extra_args = self.parameter
         alpha = self.slider.value() / 1024.0
         value = (1-alpha) * args[0] + alpha * args[2]
         self.label_name.setText("%.3f - %s" % (value, description))
@@ -147,6 +152,20 @@ class ParameterWindow(QtWidgets.QMainWindow):
         self.worker_thread.quit()
         self.worker_thread.wait()
 
+    def keyPressEvent(self, event):
+        if event.isAutoRepeat():
+            return
+        for widget in self.widgets:
+            if widget.has_button and widget.shortcut and widget.shortcut == event.text():
+                widget.set_max()
+
+    def keyReleaseEvent(self, event):
+        if event.isAutoRepeat():
+            return
+        for widget in self.widgets:
+            if widget.has_button and widget.shortcut and widget.shortcut == event.text():
+                widget.set_min()
+
     def reset(self):
         for widget in self.widgets:
             widget.reset()
@@ -158,6 +177,8 @@ class ParameterWindow(QtWidgets.QMainWindow):
 
 if __name__ == "__main__":
     parameters = list(read_parameters())
+    for parameter in parameters:
+        print(parameter)
 
     app = QtWidgets.QApplication(sys.argv)
     w = ParameterWindow(parameters)

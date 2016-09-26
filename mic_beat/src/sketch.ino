@@ -23,10 +23,10 @@ Parameter defaultValue(0.1, 1.0, 1.0); // defaultValue
 Parameter minimumValue(0.0, 0.8, 1.0); // minimum value is actually meant as percentage of default value
 Parameter saturation(0.0, 0.75, 1.0); // saturation
 
-Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override (Temporarily sets parameters to generate strobo) ?type=button
+Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override ?type=button,shortcut=f
 
-Parameter stroboEnabled(0.0, 0.0, 1.0); // stroboEnabled ?type=button
-Parameter stroboBPM(60.0, 60.0, 500.0); // stroboBPM
+Parameter stroboEnabled(0.0, 0.0, 1.0); // stroboEnabled ?type=button,shortcut=b
+Parameter stroboBPM(60.0, 200.0, 500.0); // stroboBPM
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
