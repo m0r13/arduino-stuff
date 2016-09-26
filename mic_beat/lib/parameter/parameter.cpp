@@ -25,7 +25,18 @@ void Parameter::setAnalogReadMode(int pin) {
     analogReadPin = pin;
 }
 
+void Parameter::setOverride(float value) {
+    overrideValue = value;
+    hasOverride = true;
+}
+
+void Parameter::clearOverride() {
+    hasOverride = false;
+}
+
 float Parameter::getValue() const {
+    if (hasOverride)
+        return overrideValue;
     return mode == MODE_DEFAULT ? defaultValue : currentValue;
 }
 

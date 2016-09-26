@@ -13,6 +13,9 @@ public:
     int getAnalogReadPin() const;
     void setAnalogReadMode(int pin);
 
+    void setOverride(float value);
+    void clearOverride();
+
     float getValue() const;
     void setRelativeValue(float alpha);
 
@@ -23,7 +26,8 @@ public:
 protected:
     int mode;
     int analogReadPin;
-    float minValue, defaultValue, maxValue, currentValue;
+    float minValue, defaultValue, maxValue, currentValue, overrideValue;
+    bool hasOverride;
 };
 
 class ParameterManager {
@@ -36,7 +40,7 @@ public:
     void update();
 
 protected:
-    Parameter* parameters[10];
+    Parameter* parameters[42];
     size_t parameterCount;
 };
 

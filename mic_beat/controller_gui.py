@@ -76,6 +76,12 @@ class ParameterSlider(QtWidgets.QWidget):
         self.slider.setTracking(True)
         self.slider.valueChanged.connect(self.update_labels)
         self.reset()
+        self.update_labels()
+
+        button = QtWidgets.QPushButton("Flash!")
+        button.pressed.connect(self.set_max)
+        button.released.connect(self.set_min)
+        has_button = name in ("stroboOverride", "stroboEnabled")
 
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.label_min)
@@ -84,11 +90,22 @@ class ParameterSlider(QtWidgets.QWidget):
         vlayout = QtWidgets.QVBoxLayout()
         vlayout.addWidget(self.label_name)
         vlayout.addLayout(hlayout)
+        if has_button:
+            vlayout.addWidget(button)
+            self.label_min.hide()
+            self.label_max.hide()
+            self.slider.hide()
         self.setLayout(vlayout)
 
     def reset(self):
         index, name, args, description = self.parameter
         self.slider.setValue((args[1] - args[0]) / (args[2] - args[0]) * self.slider.maximum())
+
+    def set_min(self):
+        self.slider.setValue(self.slider.minimum())
+
+    def set_max(self):
+        self.slider.setValue(self.slider.maximum())
 
     def update_labels(self):
         index, name, args, description = self.parameter

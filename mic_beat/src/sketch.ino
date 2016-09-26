@@ -20,11 +20,13 @@ Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // hueFadingPerSecond
 Parameter hueNextRadius(0.0, 0.2, 0.5); // hueNextRadius
 Parameter valueFactor(0.75, 0.85, 1.0); // valueFactor
 Parameter defaultValue(0.1, 1.0, 1.0); // defaultValue
-Parameter minimumValue(0.1, 0.8, 1.0); // minimum value is actually meant as percentage of default value
+Parameter minimumValue(0.0, 0.8, 1.0); // minimum value is actually meant as percentage of default value
 Parameter saturation(0.0, 0.75, 1.0); // saturation
 
-Parameter stroboThreshold(0.0, 0.0, 1.0); // stroboThreshold
-Parameter stroboBPM(60.0, 60.0, 6000.0); // stroboBPM
+Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override (Temporarily sets parameters to generate strobo) ?type=button
+
+Parameter stroboEnabled(0.0, 0.0, 1.0); // stroboEnabled ?type=button
+Parameter stroboBPM(60.0, 60.0, 500.0); // stroboBPM
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
@@ -40,6 +42,8 @@ LEDParameters programParameters = {
 
 BeatDetection beatDetection;
 //BeatGenerator beatDetection(125.0);
+bool beatActive = false;
+
 BPMDetection bpmDetection;
 LEDProgram ledProgram1(9, 10, 11, programParameters);
 LEDProgram ledProgram2(3, 5, 6, programParameters);
@@ -50,11 +54,6 @@ int clipCounterMax = 1000;
 // 262/899 seem to be min/max für TL082CP 5V
 int clipMin = 265;
 int clipMax = 895;
-
-bool beatActive = false;
-const int lastBeatsCount = 8;
-unsigned long lastFourBeats[lastBeatsCount] = {micros()};
-int lastFourBeatsIndex = 0;
 
 void setup() {
     Serial.begin(9600);
@@ -72,7 +71,8 @@ void setup() {
     parameters.add(defaultValue);
     parameters.add(minimumValue);
     parameters.add(saturation);
-    parameters.add(stroboThreshold);
+    parameters.add(stroboOverride);
+    parameters.add(stroboEnabled);
     parameters.add(stroboBPM);
 
 #if 1
@@ -81,12 +81,7 @@ void setup() {
 
 #if 0
     parameters.setAllModes(Parameter::MODE_DEFAULT);
-    //hueFadingPerSecond.setAnalogReadMode(1);
-    //hueNextRadius.setAnalogReadMode(1);
-    //valueFactor.setAnalogReadMode(1);
-    //defaultValue.setAnalogReadMode(1);
-    //minimumValue.setAnalogReadMode(1);
-    //saturation.setAnalogReadMode(1);
+    hueFadingPerSecond.setAnalogReadMode(1);
 #endif
 
     // emulate a first beat to set a led strip random color
@@ -97,34 +92,49 @@ void setup() {
 // called when a beat starts
 void beatOn() {
     bpmDetection.beatOn();
-    ledProgram1.beatOn();
-    ledProgram2.beatOn();
+    if (stroboEnabled.getValue() < 0.5) {
+        ledProgram1.beatOn();
+        ledProgram2.beatOn();
+    }
 }
 
 // called when a beat ends
 void beatOff() {
     bpmDetection.beatOff();
-    ledProgram1.beatOff();
-    ledProgram2.beatOff();
+    if (stroboEnabled.getValue() < 0.5) {
+        ledProgram1.beatOff();
+        ledProgram2.beatOff();
+    }
 }
 
-
-int stroboMaxTimerOn, stroboMaxTimerOff, stroboTimer = 0;
+int stroboMaxTimer, stroboTimer = 0;
 bool stroboCurrentStatus = false;
 
 // called 25 times in a second, right after the beat detection
 void beatFade() {
     // update lighting parameters
     parameters.update();
-    if (stroboThreshold.getValue() < 0.5) {
+
+    // override some parameters if we want to simulate strobo
+    if (stroboOverride.getValue() > 0.5) {
+        valueFactor.setOverride(0.0);
+        minimumValue.setOverride(0.0);
+        saturation.setOverride(0.0);
+    } else {
+        valueFactor.clearOverride();
+        minimumValue.clearOverride();
+        saturation.clearOverride();
+    }
+
+    // show normal light program or replacement-strobo
+    if (stroboEnabled.getValue() < 0.5) {
         ledProgram1.beatFade();
         ledProgram2.beatFade();
     } else {
-        stroboTimer--;
-        if (stroboTimer <= 0) {
-            stroboMaxTimerOn = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
-            stroboMaxTimerOff = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
-            stroboTimer = !stroboCurrentStatus ? stroboMaxTimerOff : stroboMaxTimerOn;
+        stroboTimer++;
+        stroboMaxTimer = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
+        if (stroboTimer >= stroboMaxTimer) {
+            stroboTimer = 0;
             stroboCurrentStatus = !stroboCurrentStatus;
             int value = stroboCurrentStatus ? 255 : 0;
             strobo.setRGB(value, value, value);

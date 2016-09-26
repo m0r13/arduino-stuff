@@ -71,12 +71,10 @@ BeatGenerator::BeatGenerator(float bpm)
     : bpm(bpm),
       maxTimerOn(1000000 * 60 / bpm / 200 * 0.5),
       maxTimerOff(1000000 * 60 / bpm / 200 * 0.5),
-      timer(0), i(0), currentStatus(false) {
+      timer(0), currentStatus(false) {
 }
 
 int BeatGenerator::processSample(float sample) {
-    i++;
-
     timer--;
     if (timer <= 0) {
         timer = !currentStatus ? maxTimerOff : maxTimerOn;
