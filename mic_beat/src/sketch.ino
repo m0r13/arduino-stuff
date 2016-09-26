@@ -16,17 +16,17 @@ const int PIN_CLIP_LED = 8;
 const int PIN_BEAT_LED = 12;
 
 // parameters of the led program
-Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // hueFadingPerSecond
-Parameter hueNextRadius(0.0, 0.2, 0.5); // hueNextRadius
-Parameter valueFactor(0.75, 0.85, 1.0); // valueFactor
-Parameter defaultValue(0.1, 1.0, 1.0); // defaultValue
-Parameter minimumValue(0.0, 0.8, 1.0); // minimum value is actually meant as percentage of default value
-Parameter saturation(0.0, 0.75, 1.0); // saturation
+Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // Hue Fading (per second)
+Parameter hueNextRadius(0.0, 0.2, 0.5); // Next Hue Radius
+Parameter valueFactor(0.75, 0.85, 1.0); // Value Factor
+Parameter defaultValue(0.1, 1.0, 1.0); // Default Value
+Parameter minimumValue(0.0, 0.8, 1.0); // Minimum Value (as factor of default value)
+Parameter saturation(0.0, 0.75, 1.0); // Saturation
 
 Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override ?type=button,shortcut=f
 
-Parameter stroboEnabled(0.0, 0.0, 1.0); // stroboEnabled ?type=button,shortcut=b
-Parameter stroboBPM(60.0, 200.0, 500.0); // stroboBPM
+Parameter stroboEnabled(0.0, 0.0, 1.0); // External Strobo ?type=button,shortcut=b
+Parameter stroboBPM(60.0, 200.0, 500.0); // External Strobo BPM
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
