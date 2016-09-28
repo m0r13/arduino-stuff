@@ -33,8 +33,10 @@ class SerialCommunicator(QtCore.QObject):
         super(QtCore.QObject, self).__init__(*args, **kwargs)
 
         self.stopped = False
-        #self.serial = serial.Serial("/dev/ttyACM0", baudrate=9600)
-        self.serial = serial.Serial()
+        self.serial = serial.Serial(baudrate=9600)
+        if os.path.exists("/dev/ttyACM0"):
+            self.serial.port = "/dev/ttyACM0"
+            self.serial.open()
         self.changed_values = {}
 
     @QtCore.pyqtSlot()
@@ -130,13 +132,20 @@ class ParameterWindow(QtWidgets.QMainWindow):
         self.worker_thread.start()
         QtCore.QTimer.singleShot(0, self.worker.work)
 
-        reset = QtWidgets.QPushButton("Reset")
+        status = QtWidgets.QLabel()
+        if self.worker.serial.is_open:
+            status.setText(self.worker.serial.port)
+            status.setStyleSheet("QLabel { color: green }")
+        else:
+            status.setText("Not Connected")
+            status.setStyleSheet("QLabel { color: red }")
+        reset = QtWidgets.QPushButton("Reset Parameters")
         reset.clicked.connect(self.reset)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(status)
         layout.addWidget(reset)
         for parameter in self.parameters:
-            print(parameter)
             widget = ParameterSlider(parameter)
             widget.slider.valueChanged.connect(self.slider_changed)
             layout.addWidget(widget)
