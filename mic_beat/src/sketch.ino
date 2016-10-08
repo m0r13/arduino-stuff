@@ -21,7 +21,7 @@ Parameter hueNextRadius(0.0, 0.2, 0.5); // Next Hue Radius
 Parameter valueFactor(0.75, 0.85, 1.0); // Value Factor
 Parameter defaultValue(0.1, 1.0, 1.0); // Default Value
 Parameter minimumValue(0.0, 0.8, 1.0); // Minimum Value (as factor of default value)
-Parameter saturation(0.0, 0.75, 1.0); // Saturation
+Parameter saturation(0.0, 1.0, 1.0); // Saturation
 
 Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override ?type=button,shortcut=f
 
@@ -45,9 +45,10 @@ BeatDetection beatDetection;
 bool beatActive = false;
 
 BPMDetection bpmDetection;
-LEDProgram ledProgram1(9, 10, 11, programParameters);
-LEDProgram ledProgram2(3, 5, 6, programParameters);
-LEDStrip strobo(9, 10, 11);
+LEDProgram ledProgram1(6, 9, 10, programParameters);
+//LEDProgram ledProgram2(3, 11, 13, programParameters);
+LEDStrip leds(6, 9, 10);
+LEDStrip strobo(3, 11, 13);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -94,7 +95,7 @@ void beatOn() {
     bpmDetection.beatOn();
     if (stroboEnabled.getValue() < 0.5) {
         ledProgram1.beatOn();
-        ledProgram2.beatOn();
+        //ledProgram2.beatOn();
     }
 }
 
@@ -103,7 +104,7 @@ void beatOff() {
     bpmDetection.beatOff();
     if (stroboEnabled.getValue() < 0.5) {
         ledProgram1.beatOff();
-        ledProgram2.beatOff();
+        //ledProgram2.beatOff();
     }
 }
 
@@ -129,8 +130,10 @@ void beatFade() {
     // show normal light program or replacement-strobo
     if (stroboEnabled.getValue() < 0.5) {
         ledProgram1.beatFade();
-        ledProgram2.beatFade();
+        strobo.setRGB(0, 0, 0);
+        //ledProgram2.beatFade();
     } else {
+        leds.setRGB(0, 0, 0);
         stroboTimer++;
         stroboMaxTimer = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
         if (stroboTimer >= stroboMaxTimer) {
