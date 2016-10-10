@@ -13,6 +13,9 @@ public:
     int getAnalogReadPin() const;
     void setAnalogReadMode(int pin);
 
+    int getDigitalReadPin() const;
+    void setDigitalReadMode(int pin);
+
     void setOverride(float value);
     void clearOverride();
 
@@ -21,11 +24,12 @@ public:
 
     static const int MODE_DEFAULT = 0;
     static const int MODE_ANALOG_READ = 1;
-    static const int MODE_SERIAL = 2;
+    static const int MODE_DIGITAL_READ = 2;
+    static const int MODE_SERIAL = 3;
 
 protected:
     int mode;
-    int analogReadPin;
+    int analogReadPin, digitalReadPin;
     float minValue, defaultValue, maxValue, currentValue, overrideValue;
     bool hasOverride;
 };

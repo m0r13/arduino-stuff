@@ -13,7 +13,9 @@ const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
 const int BEAT_SAMPLE_N = 200; // check for beats every 200 samples (25Hz)
 
 const int PIN_CLIP_LED = 8;
-const int PIN_BEAT_LED = 12;
+const int PIN_BEAT_LED = 7;
+const int PIN_BUTTON_1 = 2;
+const int PIN_BUTTON_2 = 4;
 
 // parameters of the led program
 Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // Hue Fading (per second)
@@ -48,7 +50,7 @@ BPMDetection bpmDetection;
 LEDProgram ledProgram1(6, 9, 10, programParameters);
 //LEDProgram ledProgram2(3, 11, 13, programParameters);
 LEDStrip leds(6, 9, 10);
-LEDStrip strobo(3, 11, 13);
+LEDStrip strobo(3, 3, 3);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -65,6 +67,8 @@ void setup() {
 
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
+    //pinMode(PIN_BUTTON_1, INPUT);
+    //pinMode(PIN_BUTTON_2, INPUT);
 
     parameters.add(hueFadingPerSecond);
     parameters.add(hueNextRadius);
@@ -78,6 +82,8 @@ void setup() {
 
 #if 1
     parameters.setAllModes(Parameter::MODE_SERIAL);
+    //stroboOverride.setDigitalReadMode(PIN_BUTTON_1);
+    //stroboEnabled.setDigitalReadMode(PIN_BUTTON_2);
 #endif
 
 #if 0
@@ -133,7 +139,7 @@ void beatFade() {
         strobo.setRGB(0, 0, 0);
         //ledProgram2.beatFade();
     } else {
-        leds.setRGB(0, 0, 0);
+        //leds.setRGB(0, 0, 0);
         stroboTimer++;
         stroboMaxTimer = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
         if (stroboTimer >= stroboMaxTimer) {
@@ -172,8 +178,6 @@ void loop() {
 
         float sample = (float) usample - 503.f;
         int beatStatus = beatDetection.processSample(sample);
-        //if (analogRead(1) < 512)
-        //    beatStatus = BeatDetection::BEAT_KEEP;
         if (beatStatus != BeatDetection::BEAT_KEEP) {
             if (beatStatus == BeatDetection::BEAT_ON) {
                 if (!beatActive) {

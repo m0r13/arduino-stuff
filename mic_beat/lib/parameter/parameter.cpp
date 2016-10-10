@@ -25,6 +25,16 @@ void Parameter::setAnalogReadMode(int pin) {
     analogReadPin = pin;
 }
 
+int Parameter::getDigitalReadPin() const {
+    return digitalReadPin;
+}
+
+void Parameter::setDigitalReadMode(int pin) {
+    pinMode(pin, INPUT);
+    setMode(MODE_DIGITAL_READ);
+    digitalReadPin = pin;
+}
+
 void Parameter::setOverride(float value) {
     overrideValue = value;
     hasOverride = true;
@@ -63,6 +73,9 @@ void ParameterManager::update() {
         Parameter* parameter = parameters[i];
         if (parameter->getMode() == Parameter::MODE_ANALOG_READ) {
             parameter->setRelativeValue(float(analogRead(parameter->getAnalogReadPin()) / 1024.0));
+        } else if (parameter->getMode() == Parameter::MODE_DIGITAL_READ) {
+            float value = digitalRead(parameter->getDigitalReadPin()) == HIGH ? 1.0 : 0.0;
+            parameter->setRelativeValue(value);
         }
     }
 

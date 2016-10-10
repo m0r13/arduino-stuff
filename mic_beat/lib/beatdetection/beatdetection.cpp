@@ -81,4 +81,5 @@ int BeatGenerator::processSample(float sample) {
         currentStatus = !currentStatus;
         return currentStatus <= 0 ? BeatDetection::BEAT_ON : BeatDetection::BEAT_OFF;
     }
+    return BeatDetection::BEAT_KEEP;
 }
