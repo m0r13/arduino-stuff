@@ -10,18 +10,38 @@ struct LEDParameters {
 
 class LEDProgram {
 public:
-    LEDProgram(int redPin, int greenPin, int bluePin, const LEDParameters& parameters);
+    virtual void beatOn(LEDStrip& leds) = 0;
+    virtual void beatOff(LEDStrip& leds) = 0;
+    virtual void beatFade(LEDStrip& leds) = 0;
+};
 
-    void beatOn();
-    void beatOff();
-    void beatFade();
+class BeatLEDProgram : public LEDProgram {
+public:
+    BeatLEDProgram(const LEDParameters& parameters);
+
+    virtual void beatOn(LEDStrip& leds);
+    virtual void beatOff(LEDStrip& leds);
+    virtual void beatFade(LEDStrip& leds);
 
 protected:
-    LEDStrip leds;
     LEDParameters p;
 
     float currentHue, currentValue;
     int fadingHue;
+};
+
+class StroboLEDProgram : public LEDProgram {
+public:
+    StroboLEDProgram(Parameter& bpm);
+
+    virtual void beatOn(LEDStrip& leds);
+    virtual void beatOff(LEDStrip& leds);
+    virtual void beatFade(LEDStrip& leds);
+
+protected:
+    Parameter& bpm;
+    int maxTimer, timer;
+    bool currentStatus;
 };
 
 #endif

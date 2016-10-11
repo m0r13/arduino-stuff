@@ -47,10 +47,11 @@ BeatDetection beatDetection;
 bool beatActive = false;
 
 BPMDetection bpmDetection;
-LEDProgram ledProgram1(6, 9, 10, programParameters);
-//LEDProgram ledProgram2(3, 11, 13, programParameters);
-LEDStrip leds(6, 9, 10);
-LEDStrip strobo(3, 3, 3);
+LEDStrip ledStrip1(6, 9, 10);
+LEDStrip ledStrip2(3, 3, 3);
+BeatLEDProgram ledProgram1(programParameters);
+//BeatLEDProgram ledProgram2(programParameters);
+StroboLEDProgram stroboProgram(stroboBPM);
 
 int clipCounter = 0;
 int clipCounterMax = 1000;
@@ -100,7 +101,7 @@ void setup() {
 void beatOn() {
     bpmDetection.beatOn();
     if (stroboEnabled.getValue() < 0.5) {
-        ledProgram1.beatOn();
+        ledProgram1.beatOn(ledStrip1);
         //ledProgram2.beatOn();
     }
 }
@@ -109,13 +110,10 @@ void beatOn() {
 void beatOff() {
     bpmDetection.beatOff();
     if (stroboEnabled.getValue() < 0.5) {
-        ledProgram1.beatOff();
+        ledProgram1.beatOff(ledStrip1);
         //ledProgram2.beatOff();
     }
 }
-
-int stroboMaxTimer, stroboTimer = 0;
-bool stroboCurrentStatus = false;
 
 // called 25 times in a second, right after the beat detection
 void beatFade() {
@@ -135,19 +133,11 @@ void beatFade() {
 
     // show normal light program or replacement-strobo
     if (stroboEnabled.getValue() < 0.5) {
-        ledProgram1.beatFade();
-        strobo.setRGB(0, 0, 0);
-        //ledProgram2.beatFade();
+        ledProgram1.beatFade(ledStrip1);
+        ledStrip2.setRGB(0, 0, 0);
     } else {
-        //leds.setRGB(0, 0, 0);
-        stroboTimer++;
-        stroboMaxTimer = 1000000 * 60 / stroboBPM.getValue() / (1000000 / 25) * 0.5;
-        if (stroboTimer >= stroboMaxTimer) {
-            stroboTimer = 0;
-            stroboCurrentStatus = !stroboCurrentStatus;
-            int value = stroboCurrentStatus ? 255 : 0;
-            strobo.setRGB(value, value, value);
-        }
+        ledStrip1.setRGB(0, 0, 0);
+        stroboProgram.beatFade(ledStrip2);
     }
 }
 
