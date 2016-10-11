@@ -13,6 +13,7 @@ int RECV_PIN = 11;
 IRrecv irrecv(RECV_PIN);
 
 decode_results results;
+unsigned long last;
 
 void setup() {
     Serial.begin(9600);
@@ -21,8 +22,18 @@ void setup() {
 
 void loop() {
     if (irrecv.decode(&results)) {
-        Serial.println(results.value, HEX);
+        unsigned long elapsed = micros() - last;
+        long hz = 1000000 / elapsed;
+        Serial.print("key: ");
+        Serial.print(results.value, HEX);
+        Serial.print(", time since last: ");
+        Serial.print(elapsed);
+        Serial.print("ms, ~= ");
+        Serial.print(hz);
+        Serial.println("Hz");
         irrecv.resume(); // Receive the next value
+        last = micros();
     }
     delay(100);
 }
+
