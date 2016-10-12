@@ -28,16 +28,19 @@
 // Each protocol you include costs memory and, during decode, costs time
 // Disable (set to 0) all the protocols you do not need/want!
 //
+
 /*
 #define DECODE_RC5           1
 #define SEND_RC5             1
 
 #define DECODE_RC6           1
 #define SEND_RC6             1
+*/
 
 #define DECODE_NEC           1
 #define SEND_NEC             1
 
+/*
 #define DECODE_SONY          1
 #define SEND_SONY            1
 

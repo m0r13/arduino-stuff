@@ -2,11 +2,13 @@
 // Arduino Beat Detector By Damian Peckett 2015
 // License: Public Domain.
 
+#include <IRremote.h>
 #include <ledstrip.h>
 #include <ledprogram.h>
 #include <parameter.h>
 #include <beatdetection.h>
 #include <bpmdetection.h>
+#include <ir44key.h>
 
 const int SAMPLE_RATE = 5000; // in Hz
 const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
@@ -14,8 +16,12 @@ const int BEAT_SAMPLE_N = 200; // check for beats every 200 samples (25Hz)
 
 const int PIN_CLIP_LED = 8;
 const int PIN_BEAT_LED = 7;
+const int PIN_IR_RECEIVE = 2;
 const int PIN_BUTTON_1 = 2;
 const int PIN_BUTTON_2 = 4;
+
+IRrecv irReceiver(PIN_IR_RECEIVE);
+decode_results irResults;
 
 // parameters of the led program
 Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // Hue Fading (per second)
@@ -47,7 +53,7 @@ BeatDetection beatDetection;
 bool beatActive = false;
 
 BPMDetection bpmDetection;
-LEDStrip ledStrip1(6, 9, 10);
+LEDStrip ledStrip1(9, 5, 10);
 LEDStrip ledStrip2(3, 3, 3);
 BeatLEDProgram ledProgram1(programParameters);
 //BeatLEDProgram ledProgram2(programParameters);
@@ -65,6 +71,8 @@ void setup() {
 
     // set ADC to 77khz, max for 10bit
     ADCSRA = (ADCSRA & ~0b111) | 0b100;
+
+    irReceiver.enableIRIn();
 
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
@@ -115,8 +123,31 @@ void beatOff() {
     }
 }
 
+long lastKey;
+unsigned long lastFlashPress;
+
 // called 25 times in a second, right after the beat detection
 void beatFade() {
+    if (irReceiver.decode(&irResults)) {
+        Serial.print("key: ");
+        Serial.println(irResults.value, HEX);
+        irReceiver.resume(); // Receive the next value
+
+        long value = irResults.value;
+        if (value == IR44Key::SPECIAL_REPEAT)
+            value = lastKey;
+
+        if (value == IR44Key::MODE_FLASH) {
+            stroboEnabled.setOverride(1.0);
+            lastFlashPress = millis();
+        }
+        lastKey = value;
+    }
+    
+    if (millis() - lastFlashPress > 150) {
+        stroboEnabled.clearOverride();
+    }
+
     // update lighting parameters
     parameters.update();
 
@@ -192,7 +223,8 @@ void loop() {
 
         // Consume excess clock cycles, to keep at 5000 hz
         unsigned long waitedStart = micros();
-        for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
+        // uncommented due to ir taking up enough cycles right now
+        //for(unsigned long up = time + SAMPLE_PERIOD; time > 20 && time < up; time = micros());
         waited += micros() - waitedStart;
 
         if (i > iterations)
