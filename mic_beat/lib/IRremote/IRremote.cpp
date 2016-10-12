@@ -128,9 +128,9 @@ ISR (TIMER_INTR_NAME)
 	// digitalRead() is very slow. Optimisation is possible, but makes the code unportable
 	uint8_t irdata;
     if (irparams.recvpin == 2)
-        uint8_t irdata = (PIND & 0b10) ? 1 : 0;
+        irdata = (PIND & 0b10) ? 1 : 0;
     else
-        (uint8_t)digitalRead(irparams.recvpin);
+        irdata = (uint8_t)digitalRead(irparams.recvpin);
 
 	irparams.timer++;  // One more 50uS tick
 	if (irparams.rawlen >= RAWBUF)  irparams.rcvstate = STATE_OVERFLOW ;  // Buffer overflow
