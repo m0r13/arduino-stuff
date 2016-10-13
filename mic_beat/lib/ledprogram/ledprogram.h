@@ -44,4 +44,23 @@ protected:
     bool currentStatus;
 };
 
+class ManualLEDProgram : public LEDProgram {
+public:
+    ManualLEDProgram(Parameter& brightness);
+
+    void handleKeyPress(unsigned long key, int count);
+    void handleKeyRelease(unsigned long key);
+    void update();
+
+    virtual void beatOn(LEDStrip& leds);
+    virtual void beatOff(LEDStrip& leds);
+    virtual void beatFade(LEDStrip& leds);
+
+protected:
+    Parameter& brightness;
+
+    int red, green, blue;
+    bool updateRequired;
+};
+
 #endif

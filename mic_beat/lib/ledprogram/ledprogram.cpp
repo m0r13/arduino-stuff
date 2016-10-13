@@ -1,5 +1,6 @@
-
 #include "ledprogram.h"
+
+#include <ir44key.h>
 
 BeatLEDProgram::BeatLEDProgram(const LEDParameters& parameters)
     : p(parameters) {
@@ -49,3 +50,44 @@ void StroboLEDProgram::beatFade(LEDStrip& leds) {
     }
 }
 
+
+ManualLEDProgram::ManualLEDProgram(Parameter& brightness)
+    : brightness(brightness), red(255), green(0), blue(0), updateRequired(true) {
+}
+
+void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
+    updateRequired = true;
+    switch (key) {
+    case IR44Key::RED:
+        red = 255; green = 0; blue = 0; break;
+    case IR44Key::GREEN:
+        red = 0; green = 255; blue = 0; break;
+    case IR44Key::BLUE:
+        red = 0; green = 0; blue = 255; break;
+    case IR44Key::WHITE:
+        red = 255; green = 255; blue = 255; break;
+    default:
+        updateRequired = false;
+    }
+}
+
+void ManualLEDProgram::handleKeyRelease(unsigned long key) {
+}
+
+void ManualLEDProgram::update() {
+    updateRequired = true;
+}
+
+void ManualLEDProgram::beatOn(LEDStrip& leds) {
+}
+
+void ManualLEDProgram::beatOff(LEDStrip& leds) {
+}
+
+void ManualLEDProgram::beatFade(LEDStrip& leds) {
+    if (updateRequired) {
+        float b = brightness.getValue();
+        leds.setRGB(red * b, green * b, blue * b);
+        updateRequired = false;
+    }
+}
