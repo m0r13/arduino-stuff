@@ -20,6 +20,8 @@ public:
     void clearOverride();
 
     float getValue() const;
+    float getBoolValue() const;
+    float getRelativeValue() const;
     void setRelativeValue(float alpha);
 
     static const int MODE_DEFAULT = 0;

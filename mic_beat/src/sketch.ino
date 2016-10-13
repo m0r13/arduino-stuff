@@ -20,8 +20,7 @@ const int PIN_IR_RECEIVE = 2;
 const int PIN_BUTTON_1 = 2;
 const int PIN_BUTTON_2 = 4;
 
-IRrecv irReceiver(PIN_IR_RECEIVE);
-decode_results irResults;
+IRInput irInput(PIN_IR_RECEIVE);
 
 // parameters of the led program
 Parameter hueFadingPerSecond(0.00, 0.02, 1.0); // Hue Fading (per second)
@@ -72,7 +71,7 @@ void setup() {
     // set ADC to 77khz, max for 10bit
     ADCSRA = (ADCSRA & ~0b111) | 0b100;
 
-    irReceiver.enableIRIn();
+    irInput.enableIRIn();
 
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
@@ -128,24 +127,37 @@ unsigned long lastFlashPress;
 
 // called 25 times in a second, right after the beat detection
 void beatFade() {
-    if (irReceiver.decode(&irResults)) {
+    unsigned long key;
+    int pressCount;
+    if (irInput.processInput(key, pressCount)) {
+        /*
         Serial.print("key: ");
-        Serial.println(irResults.value, HEX);
-        irReceiver.resume(); // Receive the next value
-
-        long value = irResults.value;
-        if (value == IR44Key::SPECIAL_REPEAT)
-            value = lastKey;
-
-        if (value == IR44Key::MODE_FLASH) {
+        Serial.print(key, HEX);
+        Serial.print(" pressCount: ");
+        Serial.print(pressCount);
+        Serial.print(" ");
+        Serial.println(millis());
+        */
+        if (key == IR44Key::BRIGHTNESS_UP) {
+            defaultValue.setRelativeValue(max(0.0, defaultValue.getRelativeValue() - 0.05));
+        } else if (key == IR44Key::BRIGHTNESS_DOWN) {
+            defaultValue.setRelativeValue(min(1.0, defaultValue.getRelativeValue() + 0.05));
+        } else if (key == IR44Key::MODE_FLASH && pressCount == 1) {
             stroboEnabled.setOverride(1.0);
-            lastFlashPress = millis();
         }
-        lastKey = value;
     }
-    
-    if (millis() - lastFlashPress > 150) {
-        stroboEnabled.clearOverride();
+
+    if (irInput.hasReleasedKey()) {
+        unsigned long releasedKey = irInput.getReleasedKey();
+        /*
+        Serial.print(releasedKey, HEX);
+        Serial.print(" no longer repeating! ");
+        Serial.println(millis());
+        */
+        if (releasedKey == IR44Key::MODE_FLASH) {
+            stroboEnabled.clearOverride();
+        }
+        irInput.setReleasedKeyProcessed();
     }
 
     // update lighting parameters

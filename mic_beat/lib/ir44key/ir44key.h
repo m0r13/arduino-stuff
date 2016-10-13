@@ -1,13 +1,12 @@
 #ifndef ir44key_h
 #define ir44key_h
 
+#include <Arduino.h>
+#include <IRremote.h>
+
 class IR44Key {
 public:
-    // special key that is sent when a key is repeating
-    static const long SPECIAL_REPEAT = 0xffffffff;
-
-    // all the buttons
-    // from top to bottom and left to right
+    // all the buttons from top to bottom and left to right
     static const long BRIGHTNESS_UP = 0xff3ac5;
     static const long BRIGHTNESS_DOWN = 0xffba45;
     static const long PLAY_PAUSE = 0xff827d;
@@ -62,6 +61,25 @@ public:
     static const long MODE_JUMP7 = 0xffa05f;
     static const long MODE_FADE3 = 0xff609f;
     static const long MODE_FADE7 = 0xffe01f;
+};
+
+class IRInput {
+public:
+    IRInput(int pin);
+
+    void enableIRIn();
+    bool processInput(unsigned long& key, int& pressCount);
+
+    bool hasReleasedKey() const;
+    unsigned long getReleasedKey() const;
+    void setReleasedKeyProcessed(); // setLastRepeatingKey(0)
+
+protected:
+    IRrecv receiver;
+    decode_results results;
+
+    unsigned long lastKey, lastKeyPressed, releasedKey;
+    int lastKeyPressCount;
 };
 
 #endif

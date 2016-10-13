@@ -50,6 +50,14 @@ float Parameter::getValue() const {
     return mode == MODE_DEFAULT ? defaultValue : currentValue;
 }
 
+float Parameter::getBoolValue() const {
+    return getValue() > 0.5;
+}
+
+float Parameter::getRelativeValue() const {
+    return (currentValue - minValue) / (maxValue - minValue);
+}
+
 void Parameter::setRelativeValue(float alpha) {
     currentValue = (1-alpha) * minValue + alpha * maxValue;
 }
