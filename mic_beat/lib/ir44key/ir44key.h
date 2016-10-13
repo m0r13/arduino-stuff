@@ -12,10 +12,10 @@ public:
     static const long PLAY_PAUSE = 0xff827d;
     static const long POWER_ON_OFF = 0xff02fd;
 
-    static const long RED = 0x4ab0f7b5;
-    static const long GREEN = 0x10755f41;
-    static const long BLUE = 0xf87ab5a;
-    static const long WHITE = 0xc107b660;
+    static const long RED = 0xff1ae5;
+    static const long GREEN = 0xff9a65;
+    static const long BLUE = 0xffa25d;
+    static const long WHITE = 0xff22dd;
 
     static const long C01 = 0xff2ad5;
     static const long C02 = 0xffaa55;
