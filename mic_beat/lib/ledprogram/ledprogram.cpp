@@ -31,6 +31,11 @@ StroboLEDProgram::StroboLEDProgram(Parameter& bpm)
     : bpm(bpm), maxTimer(0), timer(0), currentStatus(false) {
 }
 
+void StroboLEDProgram::resetTimer() {
+    timer = 0;
+    currentStatus = true;
+}
+
 void StroboLEDProgram::beatOn(LEDStrip& leds) {
 
 }

@@ -34,6 +34,8 @@ class StroboLEDProgram : public LEDProgram {
 public:
     StroboLEDProgram(Parameter& bpm);
 
+    void resetTimer();
+
     virtual void beatOn(LEDStrip& leds);
     virtual void beatOff(LEDStrip& leds);
     virtual void beatFade(LEDStrip& leds);

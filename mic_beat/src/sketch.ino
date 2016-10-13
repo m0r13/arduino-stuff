@@ -33,7 +33,7 @@ Parameter saturation(0.0, 1.0, 1.0); // Saturation
 Parameter stroboOverride(0.0, 0.0, 1.0); // Strobo Override ?type=button,shortcut=f
 
 Parameter stroboEnabled(0.0, 0.0, 1.0); // External Strobo ?type=button,shortcut=b
-Parameter stroboBPM(60.0, 200.0, 500.0); // External Strobo BPM
+Parameter stroboBPM(60.0, 300.0, 500.0); // External Strobo BPM
 // TODO dummy beat generation somehow?
 
 ParameterManager parameters;
