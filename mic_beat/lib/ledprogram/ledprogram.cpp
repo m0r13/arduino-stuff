@@ -67,6 +67,10 @@ void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
         red = color >> 16;
         green = (color >> 8) & 0xff;
         blue = color & 0xff;
+    } else if (key == IR44Key::DIY1) {
+       red = random(0, 256);
+       green = random(0, 256);
+       blue = random(0, 256);
     } else {
         updateRequired = false;
     }
