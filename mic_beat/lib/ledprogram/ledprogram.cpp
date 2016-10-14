@@ -62,16 +62,12 @@ ManualLEDProgram::ManualLEDProgram(Parameter& brightness)
 
 void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
     updateRequired = true;
-    switch (key) {
-    case IR44Key::RED:
-        red = 255; green = 0; blue = 0; break;
-    case IR44Key::GREEN:
-        red = 0; green = 255; blue = 0; break;
-    case IR44Key::BLUE:
-        red = 0; green = 0; blue = 255; break;
-    case IR44Key::WHITE:
-        red = 255; green = 255; blue = 255; break;
-    default:
+    if (IR44Key::isColorKey(key)) {
+        unsigned long color = IR44Key::getColorOfKey(key);
+        red = color >> 16;
+        green = color >> 8;
+        blue = color & 0xff;
+    } else {
         updateRequired = false;
     }
 }

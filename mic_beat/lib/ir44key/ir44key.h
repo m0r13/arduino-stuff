@@ -61,6 +61,9 @@ public:
     static const long MODE_JUMP7 = 0xffa05f;
     static const long MODE_FADE3 = 0xff609f;
     static const long MODE_FADE7 = 0xffe01f;
+
+    static bool isColorKey(unsigned long key);
+    static unsigned long getColorOfKey(unsigned long key);
 };
 
 class IRInput {
