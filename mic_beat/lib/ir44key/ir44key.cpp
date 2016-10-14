@@ -8,7 +8,7 @@ unsigned long IR44Key::getColorOfKey(unsigned long key) {
     switch (key) {
     case RED:       return 0xff0000;
     case GREEN:     return 0x00ff00;
-    case BLUE:      return 0x00ff00;
+    case BLUE:      return 0x0000ff;
     case WHITE:     return 0xffffff;
 
     case C01:       return 0xfc9d59;

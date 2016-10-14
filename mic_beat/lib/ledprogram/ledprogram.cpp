@@ -65,7 +65,7 @@ void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
     if (IR44Key::isColorKey(key)) {
         unsigned long color = IR44Key::getColorOfKey(key);
         red = color >> 16;
-        green = color >> 8;
+        green = (color >> 8) & 0xff;
         blue = color & 0xff;
     } else {
         updateRequired = false;
