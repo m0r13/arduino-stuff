@@ -6,6 +6,9 @@
 
 struct LEDParameters {
     Parameter *hueFadingPerSecond, *hueNextRadius, *valueFactor, *defaultValue, *minimumValue, *saturation;
+
+    void stroboOverride();
+    void stopStroboOverride();
 };
 
 class LEDProgram {

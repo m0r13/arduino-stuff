@@ -160,11 +160,13 @@ void beatFade() {
         } else {
             if (manualMode) {
                 manualProgram.handleKeyPress(key, pressCount);
+                manualProgram.update();
+            } else if (key == IR44Key::DIY6) {
+                stroboOverride.setOverride(1.0);
             } else if (key == IR44Key::MODE_FLASH && pressCount == 1) {
                 stroboEnabled.setOverride(1.0);
             }
         }
-        manualProgram.update();
     }
 
     if (irInput.hasReleasedKey()) {
@@ -176,6 +178,8 @@ void beatFade() {
         */
         if (manualMode) {
             manualProgram.handleKeyRelease(key);
+        } else if (releasedKey == IR44Key::DIY6) {
+            stroboOverride.clearOverride();
         } else if (releasedKey == IR44Key::MODE_FLASH) {
             stroboEnabled.clearOverride();
         }
@@ -192,13 +196,9 @@ void beatFade() {
     } else {
         // override some parameters if we want to simulate strobo
         if (stroboOverride.getValue() > 0.5) {
-            valueFactor.setOverride(0.0);
-            minimumValue.setOverride(0.0);
-            saturation.setOverride(0.0);
+            programParameters.stroboOverride();
         } else {
-            valueFactor.clearOverride();
-            minimumValue.clearOverride();
-            saturation.clearOverride();
+            programParameters.stopStroboOverride();
         }
 
         // show normal light program or replacement-strobo

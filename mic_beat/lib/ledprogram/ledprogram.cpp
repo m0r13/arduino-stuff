@@ -2,6 +2,18 @@
 
 #include <ir44key.h>
 
+void LEDParameters::stroboOverride() {
+    valueFactor->setOverride(0.0);
+    minimumValue->setOverride(0.0);
+    saturation->setOverride(0.0);
+}
+
+void LEDParameters::stopStroboOverride() {
+    valueFactor->clearOverride();
+    minimumValue->clearOverride();
+    saturation->clearOverride();
+}
+
 BeatLEDProgram::BeatLEDProgram(const LEDParameters& parameters)
     : p(parameters) {
 }
