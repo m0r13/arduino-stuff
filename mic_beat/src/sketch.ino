@@ -14,11 +14,11 @@ const int SAMPLE_RATE = 5000; // in Hz
 const int SAMPLE_PERIOD = 1000000 / SAMPLE_RATE; // us
 const int BEAT_SAMPLE_N = 200; // check for beats every 200 samples (25Hz)
 
-const int PIN_CLIP_LED = 8;
-const int PIN_BEAT_LED = 7;
-const int PIN_IR_RECEIVE = 2;
-const int PIN_BUTTON_1 = 2;
-const int PIN_BUTTON_2 = 4;
+const int PIN_CLIP_LED = 4;
+const int PIN_BEAT_LED = 2;
+const int PIN_IR_RECEIVE = 7;
+const int PIN_BUTTON_1 = -1;
+const int PIN_BUTTON_2 = -1;
 
 IRInput irInput(PIN_IR_RECEIVE);
 
@@ -52,10 +52,10 @@ BeatDetection beatDetection;
 bool beatActive = false;
 
 BPMDetection bpmDetection;
-LEDStrip ledStrip1(9, 5, 10);
-LEDStrip ledStrip2(3, 3, 3);
+LEDStrip ledStrip1(3, 5, 6);
+LEDStrip ledStrip2(9, 10, 11);
 BeatLEDProgram ledProgram1(programParameters);
-//BeatLEDProgram ledProgram2(programParameters);
+BeatLEDProgram ledProgram2(programParameters);
 StroboLEDProgram stroboProgram(stroboBPM);
 ManualLEDProgram manualProgram(defaultValue);
 bool manualMode = false;
@@ -63,8 +63,8 @@ bool manualMode = false;
 int clipCounter = 0;
 int clipCounterMax = 1000;
 // 262/899 seem to be min/max für TL082CP 5V
-int clipMin = 265;
-int clipMax = 895;
+int clipMin = 265 + 10;
+int clipMax = 895 - 10;
 
 void setup() {
     Serial.begin(9600);
@@ -73,7 +73,7 @@ void setup() {
     // set ADC to 77khz, max for 10bit
     ADCSRA = (ADCSRA & ~0b111) | 0b100;
 
-    irInput.enableIRIn();
+    //irInput.enableIRIn();
 
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
@@ -116,7 +116,7 @@ void beatOn() {
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOn(ledStrip1);
-            //ledProgram2.beatOn();
+            ledProgram2.beatOn(ledStrip2);
         }
     }
 }
@@ -130,7 +130,7 @@ void beatOff() {
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOff(ledStrip1);
-            //ledProgram2.beatOff();
+            ledProgram2.beatOff(ledStrip2);
         }
     }
 }
@@ -160,13 +160,13 @@ void beatFade() {
         } else {
             if (manualMode) {
                 manualProgram.handleKeyPress(key, pressCount);
-                manualProgram.update();
             } else if (key == IR44Key::DIY6) {
                 stroboOverride.setOverride(1.0);
             } else if (key == IR44Key::MODE_FLASH && pressCount == 1) {
                 stroboEnabled.setOverride(1.0);
             }
         }
+        manualProgram.update();
     }
 
     if (irInput.hasReleasedKey()) {
@@ -204,7 +204,8 @@ void beatFade() {
         // show normal light program or replacement-strobo
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatFade(ledStrip1);
-            ledStrip2.setRGB(0, 0, 0);
+            ledProgram2.beatFade(ledStrip2);
+            //ledStrip2.setRGB(0, 0, 0);
         } else {
             ledStrip1.setRGB(0, 0, 0);
             stroboProgram.beatFade(ledStrip2);
@@ -226,7 +227,7 @@ void loop() {
     unsigned long waited = 0;
     for(int i = 0;; ++i) {
         // Read ADC and center so +-512
-        int usample = analogRead(0);
+        int usample = analogRead(1);
         if (usample <= clipMin || usample >= clipMax) {
             clipCounter = clipCounterMax;
             digitalWrite(PIN_CLIP_LED, HIGH);
