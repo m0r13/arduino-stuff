@@ -2,6 +2,8 @@
 // Arduino Beat Detector By Damian Peckett 2015
 // License: Public Domain.
 
+#include <SoftwareSerial.h>
+
 #include <IRremote.h>
 #include <ledstrip.h>
 #include <ledprogram.h>
@@ -66,6 +68,8 @@ int clipCounterMax = 1000;
 int clipMin = 265 + 10;
 int clipMax = 895 - 10;
 
+//SoftwareSerial mySerial(8, 12);
+
 void setup() {
     Serial.begin(9600);
     randomSeed(analogRead(0));
@@ -73,7 +77,7 @@ void setup() {
     // set ADC to 77khz, max for 10bit
     ADCSRA = (ADCSRA & ~0b111) | 0b100;
 
-    //irInput.enableIRIn();
+    irInput.enableIRIn();
 
     pinMode(PIN_CLIP_LED, OUTPUT);
     pinMode(PIN_BEAT_LED, OUTPUT);
@@ -104,6 +108,8 @@ void setup() {
     // emulate a first beat to set a led strip random color
     beatOn();
     beatOff();
+
+    //mySerial.begin(9600);
 }
 
 // called when a beat starts
@@ -186,6 +192,15 @@ void beatFade() {
         manualProgram.update();
         irInput.setReleasedKeyProcessed();
     }
+
+    /*
+    if (mySerial.available() > 0) {
+        Serial.print("Serial: ");
+        while (mySerial.available() > 0) {
+            Serial.print((char) mySerial.read());
+        }
+    }
+    */
 
     // update lighting parameters
     parameters.update();

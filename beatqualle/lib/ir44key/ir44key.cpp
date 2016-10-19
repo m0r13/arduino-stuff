@@ -1,5 +1,7 @@
 #include "ir44key.h"
 
+#include <SoftwareSerial.h>
+
 bool IR44Key::isColorKey(unsigned long key) {
     return getColorOfKey(key) != 0;
 }
@@ -35,16 +37,27 @@ unsigned long IR44Key::getColorOfKey(unsigned long key) {
     }
 }
 
+
+SoftwareSerial mySerial(8, 12);
+
 IRInput::IRInput(int pin)
     : receiver(pin), lastKey(0), lastKeyPressed(0), lastKeyPressCount(0) {
 }
 
 void IRInput::enableIRIn() {
-    receiver.enableIRIn();
+    //receiver.enableIRIn();
+    mySerial.begin(9600);
 }
 
 bool IRInput::processInput(unsigned long& key, int& pressCount) {
-    if (!receiver.decode(&results)) {
+    if (mySerial.available() >= 4) {
+        key = 0;
+        key |= mySerial.read();
+        key |= (unsigned long) mySerial.read() << 8;
+        key |= (unsigned long) mySerial.read() << 16;
+        key |= (unsigned long) mySerial.read() << 24;
+    } else {
+    //if (!receiver.decode(&results)) {
         if (lastKey != 0 && millis() - lastKeyPressed > 150) {
             // last key was released
             releasedKey = lastKey;
@@ -54,7 +67,7 @@ bool IRInput::processInput(unsigned long& key, int& pressCount) {
     }
     receiver.resume();
 
-    key = results.value;
+    //key = results.value;
     if (key == REPEAT)
         key = lastKey;
     if (key == lastKey) {
