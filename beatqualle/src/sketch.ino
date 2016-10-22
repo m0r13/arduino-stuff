@@ -56,6 +56,8 @@ bool beatActive = false;
 BPMDetection bpmDetection;
 LEDStrip ledStrip1(3, 5, 6);
 LEDStrip ledStrip2(9, 10, 11);
+MultipleLEDStrips ledStripsBoth(ledStrip1, ledStrip2);
+
 BeatLEDProgram ledProgram1(programParameters);
 BeatLEDProgram ledProgram2(programParameters);
 StroboLEDProgram stroboProgram(stroboBPM);
@@ -117,8 +119,8 @@ void beatOn() {
     bpmDetection.beatOn();
 
     if (manualMode) {
-        manualProgram.beatOn(ledStrip1);
-        ledStrip2.setRGB(0, 0, 0);
+        manualProgram.beatOn(ledStripsBoth);
+        //ledStrip2.setRGB(0, 0, 0);
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOn(ledStrip1);
@@ -131,8 +133,8 @@ void beatOn() {
 void beatOff() {
     bpmDetection.beatOff();
     if (manualMode) {
-        manualProgram.beatOff(ledStrip1);
-        ledStrip2.setRGB(0, 0, 0);
+        manualProgram.beatOff(ledStripsBoth);
+        //ledStrip2.setRGB(0, 0, 0);
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOff(ledStrip1);
@@ -140,9 +142,6 @@ void beatOff() {
         }
     }
 }
-
-long lastKey;
-unsigned long lastFlashPress;
 
 // called 25 times in a second, right after the beat detection
 void beatFade() {
@@ -172,7 +171,6 @@ void beatFade() {
                 stroboEnabled.setOverride(1.0);
             }
         }
-        manualProgram.update();
     }
 
     if (irInput.hasReleasedKey()) {
@@ -189,25 +187,15 @@ void beatFade() {
         } else if (releasedKey == IR44Key::MODE_FLASH) {
             stroboEnabled.clearOverride();
         }
-        manualProgram.update();
         irInput.setReleasedKeyProcessed();
     }
-
-    /*
-    if (mySerial.available() > 0) {
-        Serial.print("Serial: ");
-        while (mySerial.available() > 0) {
-            Serial.print((char) mySerial.read());
-        }
-    }
-    */
 
     // update lighting parameters
     parameters.update();
 
     if (manualMode) {
-        manualProgram.beatFade(ledStrip1);
-        ledStrip2.setRGB(0, 0, 0);
+        manualProgram.beatFade(ledStripsBoth);
+        //ledStrip2.setRGB(0, 0, 0);
     } else {
         // override some parameters if we want to simulate strobo
         if (stroboOverride.getValue() > 0.5) {

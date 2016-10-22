@@ -18,6 +18,17 @@ public:
 
 protected:
     int redPin, greenPin, bluePin;
+    int red, green, blue;
+};
+
+class MultipleLEDStrips : public LEDStrip {
+public:
+    MultipleLEDStrips(LEDStrip& leds1, LEDStrip& leds2);
+
+    void setRGB(int r, int g, int b);
+
+protected:
+    LEDStrip& leds1, leds2;
 };
 
 #endif

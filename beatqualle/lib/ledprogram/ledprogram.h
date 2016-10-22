@@ -55,7 +55,6 @@ public:
 
     void handleKeyPress(unsigned long key, int count);
     void handleKeyRelease(unsigned long key);
-    void update();
 
     virtual void beatOn(LEDStrip& leds);
     virtual void beatOff(LEDStrip& leds);
@@ -65,7 +64,6 @@ protected:
     Parameter& brightness;
 
     int red, green, blue;
-    bool updateRequired;
 };
 
 #endif

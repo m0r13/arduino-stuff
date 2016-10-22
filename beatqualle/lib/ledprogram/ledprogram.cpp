@@ -69,11 +69,10 @@ void StroboLEDProgram::beatFade(LEDStrip& leds) {
 
 
 ManualLEDProgram::ManualLEDProgram(Parameter& brightness)
-    : brightness(brightness), red(255), green(0), blue(0), updateRequired(true) {
+    : brightness(brightness), red(255), green(0), blue(0) {
 }
 
 void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
-    updateRequired = true;
     if (IR44Key::isColorKey(key)) {
         unsigned long color = IR44Key::getColorOfKey(key);
         red = color >> 16;
@@ -83,16 +82,10 @@ void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
        red = random(0, 256);
        green = random(0, 256);
        blue = random(0, 256);
-    } else {
-        updateRequired = false;
     }
 }
 
 void ManualLEDProgram::handleKeyRelease(unsigned long key) {
-}
-
-void ManualLEDProgram::update() {
-    updateRequired = true;
 }
 
 void ManualLEDProgram::beatOn(LEDStrip& leds) {
@@ -102,9 +95,6 @@ void ManualLEDProgram::beatOff(LEDStrip& leds) {
 }
 
 void ManualLEDProgram::beatFade(LEDStrip& leds) {
-    if (updateRequired) {
-        float b = brightness.getValue();
-        leds.setRGB(red * b, green * b, blue * b);
-        updateRequired = false;
-    }
+    float b = brightness.getValue();
+    leds.setRGB(red * b, green * b, blue * b);
 }

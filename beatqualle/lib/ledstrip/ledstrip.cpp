@@ -59,13 +59,25 @@ long HSV_to_RGB( float h, float s, float v ) {
 LEDStrip::LEDStrip(int redPin, int greenPin, int bluePin)
     : redPin(redPin),
       greenPin(greenPin),
-      bluePin(bluePin) {
+      bluePin(bluePin),
+      red(-1), green(-1), blue(-1) {
 }
 
 void LEDStrip::setRGB(int r, int g, int b) {
-    analogWrite(redPin, r);
-    analogWrite(greenPin, g);
-    analogWrite(bluePin, b);
+    if (r != red)
+        analogWrite(redPin, r);
+    else
+        red = r;
+
+    if (g != green)
+        analogWrite(greenPin, g);
+    else
+        green = g;
+
+    if (b != blue)
+        analogWrite(bluePin, b);
+    else
+        blue = b;
 }
 
 void LEDStrip::setHSV(float h, float s, float v) {
@@ -73,3 +85,11 @@ void LEDStrip::setHSV(float h, float s, float v) {
     setRGB((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 }
 
+MultipleLEDStrips::MultipleLEDStrips(LEDStrip& leds1, LEDStrip& leds2)
+    : LEDStrip(0, 0, 0), leds1(leds1), leds2(leds2) {
+}
+
+void MultipleLEDStrips::setRGB(int r, int g, int b) {
+    leds1.setRGB(r, g, b);
+    leds2.setRGB(r, g, b);
+}
