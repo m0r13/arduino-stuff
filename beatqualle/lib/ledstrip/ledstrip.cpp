@@ -61,7 +61,7 @@ LEDStrip::LEDStrip(int redPin, int greenPin, int bluePin)
     : redPin(redPin),
       greenPin(greenPin),
       bluePin(bluePin),
-      red(-1), green(-1), blue(-1) {
+      red(-1), green(-1), blue(-1), colorInverting(false) {
     resetPinMapping();
 }
 
@@ -75,11 +75,24 @@ void LEDStrip::setPinMapping(int redMapping, int greenMapping, int blueMapping) 
     this->blueMapping = blueMapping;
 }
 
+bool LEDStrip::hasColorInverting() const {
+    return colorInverting;
+}
+
+void LEDStrip::setColorInverting(bool colorInverting) {
+    this->colorInverting = colorInverting;
+}
+
 void LEDStrip::setRGB(int r, int g, int b) {
     int values[4] = {r, g, b, 0};
     r = values[redMapping];
     g = values[greenMapping];
     b = values[blueMapping];
+    if (colorInverting) {
+        r = 255 - r;
+        g = 255 - g;
+        b = 255 - b;
+    }
 
     if (r != red)
         analogWrite(redPin, r);
@@ -102,11 +115,11 @@ void LEDStrip::setHSV(float h, float s, float v) {
     setRGB((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 }
 
-MultipleLEDStrips::MultipleLEDStrips(LEDStrip& leds1, LEDStrip& leds2)
-    : LEDStrip(0, 0, 0), leds1(leds1), leds2(leds2) {
+MultipleLEDStrips::MultipleLEDStrips(LEDStrip* ledStrip1, LEDStrip* ledStrip2)
+    : LEDStrip(0, 0, 0), ledStrip1(ledStrip1), ledStrip2(ledStrip2) {
 }
 
 void MultipleLEDStrips::setRGB(int r, int g, int b) {
-    leds1.setRGB(r, g, b);
-    leds2.setRGB(r, g, b);
+    ledStrip1->setRGB(r, g, b);
+    ledStrip2->setRGB(r, g, b);
 }

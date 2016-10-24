@@ -56,7 +56,7 @@ bool beatActive = false;
 BPMDetection bpmDetection;
 LEDStrip ledStrip1(3, 5, 6);
 LEDStrip ledStrip2(9, 10, 11);
-MultipleLEDStrips ledStripsBoth(ledStrip1, ledStrip2);
+MultipleLEDStrips ledStripsBoth(&ledStrip1, &ledStrip2);
 
 BeatLEDProgram ledProgram1(programParameters);
 BeatLEDProgram ledProgram2(programParameters);
@@ -160,11 +160,15 @@ void beatFade() {
             manualMode = !manualMode;
             if (!manualMode) {
                 ledStrip2.resetPinMapping();
+                ledStrip2.setColorInverting(false);
             } else {
-                ledStrip2.setPinMapping(2, 1, 0);
+                //ledStrip2.setPinMapping(2, 1, 0);
             }
             Serial.print("Manual mode: ");
             Serial.println(manualMode);
+        } else if (manualMode && key == IR44Key::DIY2 && pressCount == 2) {
+            // TODO this is ugly
+            ledStrip2.setColorInverting(!ledStrip2.hasColorInverting());
         } else {
             if (manualMode) {
                 manualProgram.handleKeyPress(key, pressCount);

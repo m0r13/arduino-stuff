@@ -19,6 +19,9 @@ public:
     void resetPinMapping();
     void setPinMapping(int redMapping, int greenMapping, int blueMapping);
 
+    bool hasColorInverting() const;
+    void setColorInverting(bool colorInverting);
+
     virtual void setRGB(int r, int g, int b);
     void setHSV(float h, float s, float v);
 
@@ -26,16 +29,17 @@ protected:
     int redPin, greenPin, bluePin;
     int redMapping, greenMapping, blueMapping;
     int red, green, blue;
+    bool colorInverting;
 };
 
 class MultipleLEDStrips : public LEDStrip {
 public:
-    MultipleLEDStrips(LEDStrip& leds1, LEDStrip& leds2);
+    MultipleLEDStrips(LEDStrip* ledStrip1, LEDStrip* ledStrip2);
 
     virtual void setRGB(int r, int g, int b);
 
 //protected:
-    LEDStrip& leds1, leds2;
+    LEDStrip *ledStrip1, *ledStrip2;
 };
 
 #endif
