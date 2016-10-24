@@ -120,7 +120,6 @@ void beatOn() {
 
     if (manualMode) {
         manualProgram.beatOn(ledStripsBoth);
-        //ledStrip2.setRGB(0, 0, 0);
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOn(ledStrip1);
@@ -134,7 +133,6 @@ void beatOff() {
     bpmDetection.beatOff();
     if (manualMode) {
         manualProgram.beatOff(ledStripsBoth);
-        //ledStrip2.setRGB(0, 0, 0);
     } else {
         if (stroboEnabled.getValue() < 0.5) {
             ledProgram1.beatOff(ledStrip1);
@@ -195,7 +193,6 @@ void beatFade() {
 
     if (manualMode) {
         manualProgram.beatFade(ledStripsBoth);
-        //ledStrip2.setRGB(0, 0, 0);
     } else {
         // override some parameters if we want to simulate strobo
         if (stroboOverride.getValue() > 0.5) {

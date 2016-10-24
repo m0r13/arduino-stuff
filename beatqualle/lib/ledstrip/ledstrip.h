@@ -13,7 +13,7 @@ class LEDStrip {
 public:
     LEDStrip(int redPin, int greenPin, int bluePin);
 
-    void setRGB(int r, int g, int b);
+    virtual void setRGB(int r, int g, int b);
     void setHSV(float h, float s, float v);
 
 protected:
@@ -25,7 +25,7 @@ class MultipleLEDStrips : public LEDStrip {
 public:
     MultipleLEDStrips(LEDStrip& leds1, LEDStrip& leds2);
 
-    void setRGB(int r, int g, int b);
+    virtual void setRGB(int r, int g, int b);
 
 protected:
     LEDStrip& leds1, leds2;
