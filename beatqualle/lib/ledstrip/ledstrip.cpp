@@ -62,9 +62,25 @@ LEDStrip::LEDStrip(int redPin, int greenPin, int bluePin)
       greenPin(greenPin),
       bluePin(bluePin),
       red(-1), green(-1), blue(-1) {
+    resetPinMapping();
+}
+
+void LEDStrip::resetPinMapping() {
+    setPinMapping(0, 1, 2);
+}
+
+void LEDStrip::setPinMapping(int redMapping, int greenMapping, int blueMapping) {
+    this->redMapping = redMapping;
+    this->greenMapping = greenMapping;
+    this->blueMapping = blueMapping;
 }
 
 void LEDStrip::setRGB(int r, int g, int b) {
+    int values[4] = {r, g, b, 0};
+    r = values[redMapping];
+    g = values[greenMapping];
+    b = values[blueMapping];
+
     if (r != red)
         analogWrite(redPin, r);
     else

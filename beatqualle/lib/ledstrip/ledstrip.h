@@ -16,11 +16,15 @@ class LEDStrip {
 public:
     LEDStrip(int redPin, int greenPin, int bluePin);
 
+    void resetPinMapping();
+    void setPinMapping(int redMapping, int greenMapping, int blueMapping);
+
     virtual void setRGB(int r, int g, int b);
     void setHSV(float h, float s, float v);
 
 protected:
     int redPin, greenPin, bluePin;
+    int redMapping, greenMapping, blueMapping;
     int red, green, blue;
 };
 
@@ -30,7 +34,7 @@ public:
 
     virtual void setRGB(int r, int g, int b);
 
-protected:
+//protected:
     LEDStrip& leds1, leds2;
 };
 

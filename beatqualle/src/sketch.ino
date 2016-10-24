@@ -158,6 +158,11 @@ void beatFade() {
             defaultValue.setRelativeValue(max(0.0, defaultValue.getRelativeValue() - 0.05));
         } else if (key == IR44Key::MODE_AUTO && pressCount == 1) {
             manualMode = !manualMode;
+            if (!manualMode) {
+                ledStrip2.resetPinMapping();
+            } else {
+                ledStrip2.setPinMapping(2, 1, 0);
+            }
             Serial.print("Manual mode: ");
             Serial.println(manualMode);
         } else {
