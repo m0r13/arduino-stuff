@@ -14,13 +14,14 @@ float randomHueNear(float hue, float radius) {
     return normalizeHue((1-alpha) * minimumPossible + alpha * maximumPossible);
 }
 
-long HSV_to_RGB( float h, float s, float v ) {
+long hsvToRGB(float h, float s, float v) {
   /*
      modified from Alvy Ray Smith's site:
    http://www.alvyray.com/Papers/hsv2rgb.htm
    H is given on [0, 6]. S and V are given on [0, 1].
    RGB is returned as a 24-bit long #rrggbb
    */
+  h = h * 6.0;
   int i;
   float m, n, f;
 
@@ -81,7 +82,7 @@ void LEDStrip::setRGB(int r, int g, int b) {
 }
 
 void LEDStrip::setHSV(float h, float s, float v) {
-    long rgb = HSV_to_RGB(h * 6.0, s, v);
+    long rgb = hsvToRGB(h, s, v);
     setRGB((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 }
 

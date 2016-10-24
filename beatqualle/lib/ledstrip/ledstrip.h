@@ -9,6 +9,9 @@ float normalizeHue(float hue);
 // returns a random hue in [hue-radius; hue+radius]
 float randomHueNear(float hue, float radius);
 
+// converts a color in HSV (h, s, v \in [0;1]) to RGB (r 3rd byte, g 2nd byte, b 1st byte)
+long hsvToRGB(float h, float s, float v);
+
 class LEDStrip {
 public:
     LEDStrip(int redPin, int greenPin, int bluePin);
