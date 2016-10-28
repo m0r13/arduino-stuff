@@ -1,7 +1,9 @@
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#define CONFIGURATION_QUALLE
+// define by using compiler flag:
+// $ ano build --cxxflags=-DCONFIGURATION_$CONFIG
+//#define CONFIGURATION_QUALLE
 //#define CONFIGURATION_KITCHEN
 
 #include <parameter.h>

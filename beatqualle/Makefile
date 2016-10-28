@@ -7,5 +7,8 @@ build:
 upload:
 	ano upload ${MODEL_FLAGS}
 
+serial:
+	ano serial
+
 clean:
 	ano clean
