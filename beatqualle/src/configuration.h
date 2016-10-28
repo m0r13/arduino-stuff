@@ -1,0 +1,19 @@
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
+
+#define CONFIGURATION_QUALLE
+//#define CONFIGURATION_KITCHEN
+
+#include <parameter.h>
+#include <ledprogram.h>
+
+void handleSetup();
+
+void handleKeyPressed(unsigned long key, int pressCount);
+void handleKeyReleased(unsigned long key, int pressCount);
+
+void handleBeatOn();
+void handleBeatOff();
+void handleBeatFade();
+
+#endif
