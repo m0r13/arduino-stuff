@@ -39,6 +39,7 @@ BeatLEDProgram ledProgram1(programParameters);
 BeatLEDProgram ledProgram2(programParameters);
 StroboLEDProgram stroboProgram(stroboBPM);
 ManualLEDProgram manualProgram(defaultValue);
+bool enabled = true;
 bool manualMode = false;
 
 void handleSetup() {
@@ -65,6 +66,14 @@ void handleSetup() {
 }
 
 void handleKeyPressed(unsigned long key, int pressCount) {
+    if (key == IR44Key::POWER_ON_OFF && pressCount == 1) {
+        enabled = !enabled;
+    }
+    if (!enabled) {
+        ledStripsBoth.off();
+        return;
+    }
+
     if (key == IR44Key::BRIGHTNESS_UP) {
         defaultValue.setRelativeValue(min(1.0, defaultValue.getRelativeValue() + 0.05));
     } else if (key == IR44Key::BRIGHTNESS_DOWN) {
@@ -94,6 +103,10 @@ void handleKeyPressed(unsigned long key, int pressCount) {
 }
 
 void handleKeyReleased(unsigned long key, int pressCount) {
+    if (!enabled) {
+        return;
+    }
+
     if (manualMode) {
         manualProgram.handleKeyRelease(key);
     } else if (key == IR44Key::DIY6) {
@@ -104,6 +117,10 @@ void handleKeyReleased(unsigned long key, int pressCount) {
 }
 
 void handleBeatOn() {
+    if (!enabled) {
+        return;
+    }
+
     if (manualMode) {
         manualProgram.beatOn(ledStripsBoth);
     } else {
@@ -115,6 +132,10 @@ void handleBeatOn() {
 }
 
 void handleBeatOff() {
+    if (!enabled) {
+        return;
+    }
+
     if (manualMode) {
         manualProgram.beatOff(ledStripsBoth);
     } else {
@@ -128,6 +149,10 @@ void handleBeatOff() {
 void handleBeatFade() {
     // update lighting parameters
     parameters.update();
+
+    if (!enabled) {
+        return;
+    }
 
     if (manualMode) {
         manualProgram.beatFade(ledStripsBoth);

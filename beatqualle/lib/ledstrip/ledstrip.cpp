@@ -94,6 +94,14 @@ void LEDStrip::setRGB(int r, int g, int b) {
         b = 255 - b;
     }
 
+    setInternalRGB(r, g, b);
+}
+
+void LEDStrip::off() {
+    setInternalRGB(0, 0, 0);
+}
+
+void LEDStrip::setInternalRGB(int r, int g, int b) {
     if (r != red)
         analogWrite(redPin, r);
     else
@@ -122,4 +130,9 @@ MultipleLEDStrips::MultipleLEDStrips(LEDStrip* ledStrip1, LEDStrip* ledStrip2)
 void MultipleLEDStrips::setRGB(int r, int g, int b) {
     ledStrip1->setRGB(r, g, b);
     ledStrip2->setRGB(r, g, b);
+}
+
+void MultipleLEDStrips::off() {
+    ledStrip1->off();
+    ledStrip2->off();
 }

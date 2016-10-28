@@ -23,9 +23,13 @@ public:
     void setColorInverting(bool colorInverting);
 
     virtual void setRGB(int r, int g, int b);
-    void setHSV(float h, float s, float v);
+    virtual void setHSV(float h, float s, float v);
+
+    virtual void off();
 
 protected:
+    virtual void setInternalRGB(int r, int g, int b);
+
     int redPin, greenPin, bluePin;
     int redMapping, greenMapping, blueMapping;
     int red, green, blue;
@@ -38,7 +42,9 @@ public:
 
     virtual void setRGB(int r, int g, int b);
 
-//protected:
+    virtual void off();
+
+protected:
     LEDStrip *ledStrip1, *ledStrip2;
 };
 
