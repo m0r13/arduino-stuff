@@ -78,6 +78,18 @@ void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
         red = color >> 16;
         green = (color >> 8) & 0xff;
         blue = color & 0xff;
+    } else if (key == IR44Key::RED_UP) {
+        red = min(255, red + 10);
+    } else if (key == IR44Key::GREEN_UP) {
+        green = min(255, green + 10);
+    } else if (key == IR44Key::BLUE_UP) {
+        blue = min(255, blue + 10);
+    } else if (key == IR44Key::RED_DOWN) {
+        red = max(0, red - 10);
+    } else if (key == IR44Key::GREEN_DOWN) {
+        green = max(0, green - 10);
+    } else if (key == IR44Key::BLUE_DOWN) {
+        blue = max(0, blue - 10);
     } else if (key == IR44Key::DIY1 && count == 1) {
         float h = random(0, 1025) / 1024.0;
         float s = 0.9 +  random(0, 1025) / 1024.0 * 0.1;
@@ -86,6 +98,14 @@ void ManualLEDProgram::handleKeyPress(unsigned long key, int count) {
         green = (rgb >> 8) & 0xff;
         blue = rgb & 0xff;
     }
+
+    /*
+    Serial.print(red);
+    Serial.print(" ");
+    Serial.print(green);
+    Serial.print(" ");
+    Serial.println(blue);
+    */
 }
 
 void ManualLEDProgram::handleKeyRelease(unsigned long key) {
