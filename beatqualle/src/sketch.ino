@@ -88,16 +88,15 @@ void beatFade() {
         handleKeyPressed(key, pressCount);
     }
 
-    if (irInput.hasReleasedKey()) {
-        unsigned long releasedKey = irInput.getReleasedKey();
+    if (irInput.getReleasedKey(key, pressCount)) {
         /*
-        Serial.print(releasedKey, HEX);
-        Serial.print(" no longer repeating! ");
+        Serial.print(key, HEX);
+        Serial.print(" (pressCount: ");
+        Serial.print(pressCount);
+        Serial.print(") no longer repeating! ");
         Serial.println(millis());
         */
-        // TODO pressCount
-        handleKeyReleased(releasedKey, 1);
-        irInput.setReleasedKeyProcessed();
+        handleKeyReleased(key, pressCount);
     }
 
     handleBeatFade();

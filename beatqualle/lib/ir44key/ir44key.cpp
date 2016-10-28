@@ -41,7 +41,7 @@ unsigned long IR44Key::getColorOfKey(unsigned long key) {
 SoftwareSerial mySerial(8, 12);
 
 IRInput::IRInput(int pin)
-    : receiver(pin), lastKey(0), lastKeyPressed(0), lastKeyPressCount(0) {
+    : receiver(pin), lastKey(0), lastKeyPressed(0), lastKeyPressCount(0), releasedKeyPressCount(0) {
 }
 
 void IRInput::enableIRIn() {
@@ -61,6 +61,7 @@ bool IRInput::processInput(unsigned long& key, int& pressCount) {
         if (lastKey != 0 && millis() - lastKeyPressed > 150) {
             // last key was released
             releasedKey = lastKey;
+            releasedKeyPressCount = lastKeyPressCount;
             lastKey = 0;
         }
         return false;
@@ -76,6 +77,7 @@ bool IRInput::processInput(unsigned long& key, int& pressCount) {
     } else {
         // another key -> last key was released, reset count
         releasedKey = lastKey;
+        releasedKeyPressCount = lastKeyPressCount;
         lastKeyPressCount = 1;
     }
 
@@ -85,15 +87,13 @@ bool IRInput::processInput(unsigned long& key, int& pressCount) {
     return true;
 }
 
-bool IRInput::hasReleasedKey() const {
-    return releasedKey != 0;
-}
-
-unsigned long IRInput::getReleasedKey() const {
-    return releasedKey;
-}
-
-void IRInput::setReleasedKeyProcessed() {
+bool IRInput::getReleasedKey(unsigned long& key, int& pressCount) {
+    if (releasedKey == 0)
+        return false;
+    key = releasedKey;
+    pressCount = releasedKeyPressCount;
     releasedKey = 0;
+    releasedKeyPressCount = 0;
+    return true;
 }
 

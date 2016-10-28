@@ -72,17 +72,14 @@ public:
 
     void enableIRIn();
     bool processInput(unsigned long& key, int& pressCount);
-
-    bool hasReleasedKey() const;
-    unsigned long getReleasedKey() const;
-    void setReleasedKeyProcessed(); // setLastRepeatingKey(0)
+    bool getReleasedKey(unsigned long& key, int& pressCount);
 
 protected:
     IRrecv receiver;
     decode_results results;
 
     unsigned long lastKey, lastKeyPressed, releasedKey;
-    int lastKeyPressCount;
+    int lastKeyPressCount, releasedKeyPressCount;
 };
 
 #endif
