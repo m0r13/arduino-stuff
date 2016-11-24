@@ -1,14 +1,15 @@
 #include <SPI.h>
 #include <LiquidCrystal_I2C.h>
 
-const int CS = 5;
+const int CS_NEGATIVE = 5;
+const int CS_POSITIVE = 8;
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
-void potWrite(int value) {
-    digitalWrite(CS, LOW);
+void potWrite(int cs, int value) {
+    digitalWrite(cs, LOW);
     SPI.transfer(0x00);
     SPI.transfer(value);
-    digitalWrite(CS, HIGH);
+    digitalWrite(cs, HIGH);
 }
 
 class DigitalGain {
@@ -65,8 +66,10 @@ void setup() {
     Serial.begin(9600);
     lcd.begin(20, 4);
     lcd.noBlink();
-    pinMode(CS, OUTPUT);
-    digitalWrite(CS, HIGH);
+    pinMode(CS_NEGATIVE, OUTPUT);
+    pinMode(CS_POSITIVE, OUTPUT);
+    digitalWrite(CS_NEGATIVE, HIGH);
+    digitalWrite(CS_POSITIVE, HIGH);
     SPI.begin();
 }
 
@@ -76,26 +79,35 @@ float mix(float a, float b, float alpha) {
 
 const size_t taps = 128;
 DigitalGain negativeGain(taps, 10*1000, 10*1000, true);
+DigitalGain positiveGain(taps, 10*1000, 10*1000, false);
 
 void loop() {
-    float analogValue = min(1.0, analogRead(A0) / 1021.0);
+    float analogValue = min(1.0, (analogRead(A0) / 4) / 256.0);
 
-    float gain = mix(negativeGain.getMinGain(), negativeGain.getMaxGain(), analogValue);
-    int tap = int(negativeGain.inverseGainDb(gain));
-    if (tap < 1) {
-        tap = 1;
-    } else if (tap >= taps) {
-        tap = taps - 1;
+    float minGain = max(-20.0f, negativeGain.getMinGain());
+    float maxGain = min(20.0f, positiveGain.getMaxGain());
+    float gain = mix(minGain, maxGain, analogValue);
+
+    size_t tap1 = taps-1, tap2 = taps-1;
+    float actualGain;
+    if (gain < 0) {
+        tap1 = int(negativeGain.inverseGainDb(gain));
+        actualGain = negativeGain.gainDb(tap1);
+    } else {
+        tap2 = int(positiveGain.inverseGainDb(gain));
+        actualGain = positiveGain.gainDb(tap2);
     }
-    float actualGain = negativeGain.gainDb(tap);
 
     lcd.setCursor(0, 0);
     lcd.print("Gain: ");
     lcd.print(gain);
     lcd.print("dB ");
     lcd.setCursor(0, 1);
-    lcd.print("Poti tap: ");
-    lcd.print(tap);
+    lcd.print("Tap 1: ");
+    lcd.print(tap1);
+    lcd.print(" Tap2: ");
+    lcd.print(tap2);
+    lcd.print("  ");
     lcd.print("   ");
     lcd.setCursor(0, 2);
     lcd.print("Act. gain: ");
@@ -108,7 +120,8 @@ void loop() {
     lcd.print("   ");
     */
     
-    potWrite(tap);
+    potWrite(CS_NEGATIVE, tap1);
+    potWrite(CS_POSITIVE, tap2);
 
     /*
     Serial.print("Min gain: ");
