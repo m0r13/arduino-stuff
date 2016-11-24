@@ -11,33 +11,54 @@ void potWrite(int value) {
     digitalWrite(CS, HIGH);
 }
 
-const size_t taps = 128;
-const float R1 = 10*1000;
-const float R2 = 10*1000;
+class DigitalGain {
+public:
+    DigitalGain(size_t taps, float resistor1, float resistor2, bool negativeGain = false)
+        : taps(taps), resistor1(resistor1), resistor2(resistor2), negativeGain(negativeGain) {
+        minTap = 1;
+        maxTap = taps-1;
+        minGain = gainDb(minTap);
+        maxGain = gainDb(maxTap);
+        if (maxGain < minGain) {
+            minTap = taps-1;
+            maxTap = 1;
+            minGain = gainDb(minTap);
+            maxGain = gainDb(maxTap);
+        }
+    }
 
-float gain(int tap) {
-    return R1 * tap / (taps-1) / R2;
-    //return R1 / (R2 * tap / (taps-1));
-}
+    float getMinTap() const { return minTap; }
+    float getMaxTap() const { return maxTap; }
+    float getMinGain() const { return minGain; }
+    float getMaxGain() const { return maxGain; }
 
-float inverseGain(float gain) {
-    return R2 * gain * (taps-1) / R1;
-    //return R1 / gain / R2 * (taps-1);
-}
+    float gain(int tap) const {
+        if (negativeGain)
+            return resistor1 * tap / (taps-1) / resistor2;
+        return resistor1 / (resistor2 * tap / (taps-1));
+    }
 
-float gainDb(int tap) {
-    return 20.0 * log10(gain(tap));
-}
+    float inverseGain(float gain) const {
+        if (negativeGain)
+            return resistor2 * gain * (taps-1) / resistor1;
+        return resistor1 / gain / resistor2 * (taps-1);
+    }
 
-float inverseGainDb(float db) {
-    return inverseGain(pow(10.0, db / 20.0));
-}
+    float gainDb(int tap) const {
+        return 20.0 * log10(gain(tap));
+    }
 
-float minGain, minTap;
-float maxGain, maxTap;
+    float inverseGainDb(float db) const {
+        return inverseGain(pow(10.0, db / 20.0));
+    }
 
-float mapRange(float srcA, float srcB, float x, float destA, float destB) {
-    
+protected:
+    size_t taps;
+    float resistor1, resistor2;
+    bool negativeGain;
+
+    size_t minTap, maxTap;
+    float minGain, maxGain;
 };
 
 void setup() {
@@ -47,35 +68,26 @@ void setup() {
     pinMode(CS, OUTPUT);
     digitalWrite(CS, HIGH);
     SPI.begin();
-
-    minTap = 1;
-    maxTap = taps-1;
-    minGain = gainDb(minTap);
-    maxGain = gainDb(maxTap);
-    if (maxGain < minGain) {
-        minTap = taps-1;
-        maxTap = 1;
-        minGain = gainDb(minTap);
-        maxGain = gainDb(maxTap);
-    }
 }
 
 float mix(float a, float b, float alpha) {
     return a*(1 - alpha) + b*alpha;
 }
 
+const size_t taps = 128;
+DigitalGain negativeGain(taps, 10*1000, 10*1000, true);
+
 void loop() {
     float analogValue = min(1.0, analogRead(A0) / 1021.0);
-    Serial.println(analogValue);
 
-    float gain = mix(minGain, maxGain, analogValue);
-    int tap = int(inverseGainDb(gain));
+    float gain = mix(negativeGain.getMinGain(), negativeGain.getMaxGain(), analogValue);
+    int tap = int(negativeGain.inverseGainDb(gain));
     if (tap < 1) {
         tap = 1;
     } else if (tap >= taps) {
         tap = taps - 1;
     }
-    float actualGain = gainDb(tap);
+    float actualGain = negativeGain.gainDb(tap);
 
     lcd.setCursor(0, 0);
     lcd.print("Gain: ");
